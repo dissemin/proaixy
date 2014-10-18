@@ -36,6 +36,8 @@ class OaiRecord(models.Model):
     source = models.ForeignKey(OaiSource)
     # Last modified by the OAI source
     timestamp = models.DateTimeField()
+    # The format of the metadata
+    format = models.CharField(max_length=128)
     # The unique ID of the metadata from the source
     identifier = models.CharField(max_length=128, unique=True)
     # The sets it belongs to

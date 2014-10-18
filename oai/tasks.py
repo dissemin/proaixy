@@ -22,10 +22,11 @@ logger = get_task_logger(__name__)
 @shared_task
 def fetch_from_source(pk):
     source = OaiSource.objects.get(pk=pk)
+    format = 'oai_dc'
     #try:
     # Set up the OAI fetcher
     registry = MetadataRegistry()
-    registry.registerReader('oai_dc', oai_dc_reader)
+    registry.registerReader(format, oai_dc_reader)
     client = Client(source.url, registry)
     client.updateGranularity()
 
@@ -39,12 +40,12 @@ def fetch_from_source(pk):
     while start_date <= current_date:
         print "Fetching records between "+str(start_date)+" and "+str(until_date)
         try:
-            listRecords = client.listRecords(metadataPrefix='oai_dc', from_=start_date, until=until_date)
+            listRecords = client.listRecords(metadataPrefix=format, from_=start_date, until=until_date)
         except NoRecordsMatchError:
             listRecords = []
 
         for record in listRecords:
-            update_record(source, record)
+            update_record(source, record, format)
 
         source.last_update = make_aware(until_date, UTC())
         source.save()
@@ -54,14 +55,14 @@ def fetch_from_source(pk):
     #    error = OaiError(source=source, text=unicode(e))
     #    error.save()
 
-def update_record(source, record):
+def update_record(source, record, format):
     fullXML = record[1].element()
     metadataStr = etree.tostring(fullXML, pretty_print=True)
     identifier = record[0].identifier()
     timestamp = record[0].datestamp()
     timestamp = make_aware(timestamp, UTC())
 
-    modelrecord, created = OaiRecord.objects.get_or_create(identifier=identifier,
+    modelrecord, created = OaiRecord.objects.get_or_create(identifier=identifier, format=format,
             defaults={'source':source, 'metadata':metadataStr, 'timestamp':timestamp})
     if not created:
         modelrecord.timestamp = timestamp
