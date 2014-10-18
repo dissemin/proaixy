@@ -1,0 +1,12 @@
+{% extends "oai/endpoint-common.xml" %}
+{% load iso %}
+{% block mainContent %}
+{% if matches %}
+<ListIdentifiers>{% for record in matches.all %}
+<header>
+    <identifier>{{ record.identifier }}</identifier>
+    <datestamp>{{ record.timestamp | isoformat }}</datestamp>{% for setspec in record.sets.all %}
+    <setSpec>{{ setspec }}</setSpec>{% endfor %}
+</header>{% endfor %}
+</ListIdentifiers>{% else %}<error code="noRecordsMatch">The query returned no results.</error>{% endif %}{% endblock %}
+

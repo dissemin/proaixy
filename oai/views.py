@@ -42,6 +42,8 @@ def endpoint(request):
         return identify(request, context)
     elif verb == 'ListRecords':
         return listRecords(request, context)
+    elif verb == 'ListIdentifiers':
+        return listIdentifiers(request, context)
     else:
         return formatError('badVerb','Bad verb. Verb "'+verb+'" is not implemented.', context, request)
 
@@ -54,7 +56,12 @@ def identify(request, context):
         context['earliestDatestamp'] = '1990-01-01'
     return render(request, 'oai/identify.xml', context, content_type='text/xml')
 
-def listRecords(request, context):
+def getListQuery(context, request):
+    """
+    Returns two objects:
+    - the query dictionary corresponding to the request or None if anything went wrong
+    - the error page to return if anything went wrong, or None otherwise
+    """
     queryParameters = dict()
 
     # Validate arguments
@@ -62,7 +69,7 @@ def listRecords(request, context):
     # metadataPrefix
     metadataPrefix = request.GET.get('metadataPrefix')
     if not metadataPrefix:
-        return formatError('badArgument', 'The metadataPrefix argument is required.', context, request)
+        return None, formatError('badArgument', 'The metadataPrefix argument is required.', context, request)
     # TODO check that the syntax of the format is correct
     queryParameters['format'] = metadataPrefix
 
@@ -72,7 +79,7 @@ def listRecords(request, context):
         # TODO check that the syntax of the set is correct
         matchingSet = OaiSet.objects.get(name=set)
         if not matchingSet:
-            return formatError('badArgument', 'The set "'+set+'" does not exist.', context, request)
+            return None, formatError('badArgument', 'The set "'+set+'" does not exist.', context, request)
         queryParameters['set'] = set
     
     # from
@@ -81,7 +88,7 @@ def listRecords(request, context):
         try:
             from_ = tolerant_datestamp_to_datetime(from_)
         except DatestampError:
-            return formatError('badArgument', 'The parameter "from" expects a valid date, not "'+from_+"'.", context, request)
+            return None, formatError('badArgument', 'The parameter "from" expects a valid date, not "'+from_+"'.", context, request)
         queryParameters['from'] = from_
 
     # until
@@ -90,14 +97,33 @@ def listRecords(request, context):
         try:
             until = tolerant_datestamp_to_datetime(until)
         except DatestampError:
-            return formatError('badArgument', 'The parameter "until" expects a valid date, not "'+until+"'.", context, request)
+            return None, formatError('badArgument', 'The parameter "until" expects a valid date, not "'+until+"'.", context, request)
         queryParameters['until'] = until
 
     # Check that from <= until
     if from_ and until and from_ > until:
-        return formatError('badArgument', '"from" should not be after "until".', context, request)
-        
+        return None, formatError('badArgument', '"from" should not be after "until".', context, request)
+
+    return queryParameters, None
+ 
+
+def listRecords(request, context):
+    queryParameters, error = getListQuery(context, request)
+    if error:
+        return error
+       
     matches = OaiRecord.objects.filter(**queryParameters)
     context['matches'] = matches
     return render(request, 'oai/listRecords.xml', context, content_type='text/xml')
+
+def listIdentifiers(request, context):
+    queryParameters, error = getListQuery(context, request)
+    if error:
+        return error
+
+    matches = OaiRecord.objects.filter(**queryParameters)
+    context['matches'] = matches
+    return render(request, 'oai/listIdentifiers.xml', context, content_type='text/xml')
+
+
 
