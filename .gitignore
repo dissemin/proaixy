@@ -1,0 +1,6 @@
+# python files
+*.pyc
+# vim 
+.*.swp
+# Data
+db.sqlite3

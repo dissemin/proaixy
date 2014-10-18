@@ -20,27 +20,38 @@ class OaiError(models.Model):
     def __unicode__(self):
         return self.text
 
-# A record from an OAI source
-class OaiRecord(models.Model):
-    source = models.ForeignKey(OaiSource)
-    timestamp = models.DateTimeField()
-    identifier = models.CharField(max_length=128)
-    metadata = models.TextField()
-    
 # An OAI set. If it is not associated with a source, it means that it is introduced by us
 class OaiSet(models.Model):
     source = models.ForeignKey(OaiSource, null=True, blank=True)
     name = models.CharField(max_length=128)
     def __unicode__(self):
         prefix = 'proaixy'
-        if self.source
+        if self.source:
             prefix = self.source.name
         return prefix+'_'+self.name
 
-# A statement that some record belongs to some set.
-class OaiSetSpec(models.Model):
-    container = models.ForeignKey(OaiSet)
-    record = models.ForeignKey(OaiRecord)
+
+# A record from an OAI source
+class OaiRecord(models.Model):
+    source = models.ForeignKey(OaiSource)
+    # Last modified by the OAI source
+    timestamp = models.DateTimeField()
+    # The unique ID of the metadata from the source
+    identifier = models.CharField(max_length=128, unique=True)
+    # The sets it belongs to
+    sets = models.ManyToManyField(OaiSet)
+    # The metadata as an XML object
+    metadata = models.TextField()
+    # Last updated by us
+    last_modified = models.DateTimeField(auto_now=True)
     def __unicode__(self):
-        return record.identifier + " is " + unicode(self.container)
+        return self.identifier
+    
+# A statement that some record belongs to some set.
+# class OaiSetSpec(models.Model):
+#    container = models.ForeignKey(OaiSet)
+#    record = models.ForeignKey(OaiRecord)
+#    unique_together
+#    def __unicode__(self):
+#        return record.identifier + " is " + unicode(self.container)
 
