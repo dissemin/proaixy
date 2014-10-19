@@ -75,7 +75,7 @@ def update_record(source, record, format):
 
 @shared_task
 def cleanup_resumption_tokens():
-    threshold = now() - timedelta(hours=resumption_token_validity)
+    threshold = now() - resumption_token_validity
     ResumptionToken.objects.filter(date_created__lt=threshold).delete()
 
 
