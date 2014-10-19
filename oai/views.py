@@ -29,6 +29,11 @@ def updateSets(request, pk):
     fetch_sets_from_source.apply_async(eta=timezone.now(), kwargs={'pk':pk})
     return render(request, 'oai/updateSource.html', {'source':source})
 
+def updateFormats(request, pk):
+    source = get_object_or_404(OaiSource, pk=pk)
+    fetch_formats_from_source.apply_async(eta=timezone.now(), kwargs={'pk':pk})
+    return render(request, 'oai/updateSource.html', {'source':source})
+
 def formatError(errorCode, errorMessage, context, request):
     context['errorCode'] = errorCode
     context['errorMessage'] = errorMessage
@@ -79,6 +84,8 @@ def endpoint(request):
 
 def identify(request, context):
     context['baseURL'] = 'http://'+request.get_host()+'/'+oai_endpoint_name
+    context['repoName'] = repository_name
+    context['adminEmail'] = admin_email
     earliest = OaiRecord.objects.order_by('timestamp').first()
     if earliest:
         context['earliestDatestamp'] = earliest.timestamp

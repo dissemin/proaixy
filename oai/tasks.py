@@ -61,14 +61,27 @@ def fetch_from_source(pk):
 def fetch_sets_from_source(pk):
     source = OaiSource.objects.get(pk=pk)
     registry = MetadataRegistry()
-    registry.registerReader(format, oai_dc_reader)
     client = Client(source.url, registry)
     
     listSets = client.listSets()
     for set in listSets:
-        s, created = OaiSet.objects.get_or_create(source=source, name=set[0], defaults={'fullname':set[1]})
+        s, created = OaiSet.objects.get_or_create(source=source, name=set[0])
         s.fullname=set[1]
         s.save()
+
+@shared_task
+def fetch_formats_from_source(pk):
+    source = OaiSource.objects.get(pk=pk)
+    registry = MetadataRegistry()
+    client = Client(source.url, registry)
+    
+    listFormats = client.listMetadataFormats()
+    for format in listFormats:
+        f, created = OaiFormat.objects.get_or_create(name=format[0])
+        f.schema=format[1]
+        f.namespace=format[2]
+        f.save()
+
 
 def update_record(source, record, format):
     fullXML = record[1].element()

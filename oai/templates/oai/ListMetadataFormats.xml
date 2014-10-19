@@ -3,7 +3,7 @@
 <ListMetadataFormats>{% for meta in matches.all %}
 <metadataFormat>
     <metadataPrefix>{{ meta.name }}</metadataPrefix>
-    <schema>{{ meta.shema }}</schema>
+    <schema>{{ meta.schema }}</schema>
     <metadataNamespace>{{ meta.namespace }}</metadataNamespace>
 </metadataFormat>{% endfor %}
 </ListMetadataFormats>{% endblock mainContent %}

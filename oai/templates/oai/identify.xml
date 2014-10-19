@@ -1,10 +1,10 @@
 {% extends "oai/endpoint-common.xml" %}
 {% load iso %}
 {% block mainContent %}<Identify>
-   <repositoryName>proaixy</repositoryName>
+    <repositoryName>{{ repoName }}</repositoryName>
    <baseURL>{{ baseURL }}</baseURL>
    <protocolVersion>2.0</protocolVersion>
-   <adminEmail>antonin@delpeuch.eu</adminEmail>
+   <adminEmail>{{ adminEmail }}</adminEmail>
    <earliestDatestamp>{{ earliestDatestamp | isoformat }}</earliestDatestamp>
    <deletedRecord>no</deletedRecord>
    <granularity>YYYY-MM-DDThh:mm:ssZ</granularity>
