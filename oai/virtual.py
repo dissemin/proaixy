@@ -34,7 +34,8 @@ class OAIDCAuthorExtractor(VirtualSetExtractor):
         return 'author'
 
     separator_re = re.compile(r',+ *')
-    nontext_re = re.compile(r'[^ a-z_]+')
+    nontext_re = re.compile(r'[^a-z_]+')
+    final_nontext_re = re.compile(r'[^a-z_]+$')
 
     @staticmethod
     def getVirtualSets(element):
@@ -49,6 +50,7 @@ class OAIDCAuthorExtractor(VirtualSetExtractor):
             name = unicodedata.normalize('NFKD',unicode(v)).encode('ASCII', 'ignore').lower()
             name = name.strip()
             name = OAIDCAuthorExtractor.separator_re.sub('_',name)
+            name = OAIDCAuthorExtractor.final_nontext_re.sub('',name)
             name = OAIDCAuthorExtractor.nontext_re.sub('-',name)
             result.append(name)
         return result

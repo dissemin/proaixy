@@ -22,5 +22,6 @@ class OaiSourceAdmin(admin.ModelAdmin):
 admin.site.register(OaiSource, OaiSourceAdmin)
 admin.site.register(OaiRecord)
 admin.site.register(OaiSet)
+admin.site.register(OaiFormat)
 admin.site.register(ResumptionToken)
 
