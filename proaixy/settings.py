@@ -92,7 +92,7 @@ CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 CELERYBEAT_SCHEDULE = {
     'cleanup_resumption_tokens': {
                 'task': 'oai.tasks.cleanup_resumption_tokens',
-                'schedule': resumption_token_validity,
+                'schedule': oai.settings.resumption_token_validity,
                 'args': ()},
     }
 
