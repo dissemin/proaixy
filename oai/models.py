@@ -2,9 +2,11 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
 import hashlib
 
 from oai.utils import nstr, ndt
+from oai.settings import own_set_prefix
 
 salt = 'change_me'
 
@@ -31,10 +33,27 @@ class OaiSet(models.Model):
     name = models.CharField(max_length=128)
     fullname = models.CharField(max_length=128, null=True, blank=True)
     def __unicode__(self):
-        prefix = 'proaixy'
+        prefix = own_set_prefix
         if self.source:
             prefix = self.source.name
         return prefix+':'+self.name
+    @staticmethod
+    def byRepresentation(name):
+        """
+        Returns the set s such that unicode(s) == name, or None if not found
+        """
+        scpos = name.find(':')
+        if scpos == -1:
+            return None
+        prefix = name[:scpos]
+        try:
+            if prefix != own_set_prefix:
+                source = OaiSource.objects.get(name=prefix)
+            else:
+                source = None
+            return OaiSet.objects.get(source=source,name=name[scpos+1:])
+        except ObjectDoesNotExist:
+            return None
 
 
 # A record from an OAI source

@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.template import RequestContext, loader
 from django.views import generic
 from django.utils import timezone
+from django.core.exceptions import ObjectDoesNotExist
 
 from oaipmh.datestamp import tolerant_datestamp_to_datetime
 from oaipmh.error import DatestampError
@@ -16,6 +17,7 @@ from oai.tasks import *
 from oai.models import *
 from oai.utils import to_kv_pairs
 from oai.settings import *
+from oai.resumption import *
 
 def updateSource(request, pk):
     source = get_object_or_404(OaiSource, pk=pk)
@@ -91,10 +93,10 @@ def getListQuery(context, request):
     set = getParams.pop('set', None)
     if set:
         # TODO check that the syntax of the set is correct
-        matchingSet = OaiSet.objects.get(name=set)
+        matchingSet = OaiSet.byRepresentation(set)
         if not matchingSet:
             return None, formatError('badArgument', 'The set "'+set+'" does not exist.', context, request)
-        queryParameters['set'] = set
+        queryParameters['sets'] = matchingSet
     
     # from
     from_ = getParams.pop('from', None)
@@ -103,7 +105,7 @@ def getListQuery(context, request):
             from_ = tolerant_datestamp_to_datetime(from_)
         except DatestampError:
             return None, formatError('badArgument', 'The parameter "from" expects a valid date, not "'+from_+"'.", context, request)
-        queryParameters['from'] = from_
+        queryParameters['timestamp__gte'] = make_aware(from_, UTC())
 
     # until
     until = getParams.pop('until', None)
@@ -112,7 +114,7 @@ def getListQuery(context, request):
             until = tolerant_datestamp_to_datetime(until)
         except DatestampError:
             return None, formatError('badArgument', 'The parameter "until" expects a valid date, not "'+until+"'.", context, request)
-        queryParameters['until'] = until
+        queryParameters['timestamp__lte'] = make_aware(until, UTC())
 
     # Check that from <= until
     if from_ and until and from_ > until:
@@ -125,53 +127,6 @@ def getListQuery(context, request):
 
     return queryParameters, None
  
-
-def handleListQuery(request, context, queryType, parameters, offset=0):
-    # TODO use offset
-    if queryType == 'ListRecords' or queryType == 'ListIdentifiers':
-        matches = OaiRecord.objects.filter(**parameters)
-    elif queryType == 'ListSets':
-        matches = OaiSet.objects.all()
-    else:
-        return formatError('badArgument', 'Illegal verb.')
-    count = matches.count()
-    # Should we create a resumption token?
-    if count-offset > results_limit:
-        token = createResumptionToken(queryType, parameters, offset+results_limit, count)
-        context['token'] = token
-    context['matches'] = matches[offset:(offset+results_limit)]
-    return render(request, 'oai/'+queryType+'.xml', context, content_type='text/xml')
-
-
-def createResumptionToken(queryType, queryParameters, offset, totalCount):
-    token = ResumptionToken(queryType=queryType, offset=offset,
-            cursor=offset-results_limit, total_count=totalCount)
-    if 'format' in queryParameters:
-        token.metadataPrefix = queryParameters['format']
-    if 'from' in queryParameters:
-        token.fro = make_aware(queryParameters['from'], UTC())
-    if 'until' in queryParameters:
-        token.until = make_aware(queryParameter['until'], UTC())
-    if 'set' in queryParameters:
-        token.set = queryParameters['set']
-    token.save()
-    token.genkey()
-    return token
-
-def resumeRequest(context, request, queryType, key):
-    token = ResumptionToken.objects.get(queryType=queryType, key=key)
-    if not token:
-        return formatError('badResumptionToken', 'This resumption token is invalid.', context, request)
-    parameters = dict()
-    parameters['format'] = token.metadataPrefix
-    if token.set:
-        parameters['set'] = token.set
-    if token.fro:
-        parameters['from'] = make_naive(token.fro, UTC())
-    if token.until:
-        parameters['until'] = make_naive(token.until, UTC())
-    return handleListQuery(request, context, queryType, parameters, token.offset)
-    
 
 
 

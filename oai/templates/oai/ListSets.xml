@@ -2,7 +2,7 @@
 {% block mainContent %}
 <ListSets>{% for record in matches.all %}
 <set>
-    <setSpec>{{ record.name }}</setSpec>
+    <setSpec>{{ record }}</setSpec>
     <setName>{% if record.fullname %}{{ record.fullname }}{% else %}{{ record.name }}{% endif %}</setName>
 </set>{% endfor %}{% if token %}
 <resumptionToken cursor="{{ token.cursor }}" completeListSize="{{ token.total_count }}">{{ token.key }}</resumptionToken>{% endif %}
