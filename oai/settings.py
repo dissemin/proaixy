@@ -3,5 +3,6 @@ from __future__ import unicode_literals
 
 oai_endpoint_name = 'oai'
 results_limit = 2
-resumption_token_validity = 24 # hours
+resumption_token_validity = 6 # hours
+metadata_format = 'oai_dc'
 

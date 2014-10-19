@@ -16,13 +16,14 @@ from oaipmh.datestamp import tolerant_datestamp_to_datetime
 from oaipmh.error import DatestampError, NoRecordsMatchError
 
 from oai.models import *
+from oai.settings import *
 
 logger = get_task_logger(__name__)
 
 @shared_task
 def fetch_from_source(pk):
     source = OaiSource.objects.get(pk=pk)
-    format = 'oai_dc'
+    format = metadata_format # defined in oai.settings
     #try:
     # Set up the OAI fetcher
     registry = MetadataRegistry()
@@ -71,6 +72,11 @@ def update_record(source, record, format):
     for s in record[0].setSpec():
         modelset, created = OaiSet.objects.get_or_create(source=source, name=s)
         modelrecord.sets.add(modelset)
+
+@shared_task
+def cleanup_resumption_tokens():
+    threshold = now() - timedelta(hours=resumption_token_validity)
+    ResumptionToken.objects.filter(date_created__lt=threshold).delete()
 
 
 

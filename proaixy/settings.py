@@ -8,6 +8,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
+import oai.settings
+from datetime import timedelta
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -85,4 +88,13 @@ STATIC_URL = '/static/'
 # Celery config
 BROKER_URL = 'amqp://guest:guest@127.0.0.1:5672//'
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
+
+CELERYBEAT_SCHEDULE = {
+    'cleanup_resumption_tokens': {
+                'task': 'oai.tasks.cleanup_resumption_tokens',
+                'schedule': timedelta(hours=oai.settings.resumption_token_validity),
+                'args': ()},
+    }
+
+CELERY_TIMEZONE = 'UTC'
 
