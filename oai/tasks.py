@@ -32,14 +32,13 @@ def fetch_from_source(pk):
     client.updateGranularity()
 
     # Limit queries to records in a time range of 7 days
-    time_chunk = timedelta(days=2)
+    time_chunk = query_time_range
 
     start_date = make_naive(source.last_update, UTC())
     current_date = make_naive(now(), UTC())
     until_date = start_date + time_chunk
 
     while start_date <= current_date:
-        print "Fetching records between "+str(start_date)+" and "+str(until_date)
         try:
             listRecords = client.listRecords(metadataPrefix=format.name, from_=start_date, until=until_date)
         except NoRecordsMatchError:
@@ -48,9 +47,8 @@ def fetch_from_source(pk):
         for record in listRecords:
             update_record(source, record, format)
 
-        # TODO TODO uncomment
-     #   source.last_update = make_aware(until_date, UTC())
-     #   source.save()
+        source.last_update = make_aware(min(until_date, current_date), UTC())
+        source.save()
         until_date += time_chunk
         start_date += time_chunk
         #except Exception as e:
@@ -96,9 +94,21 @@ def update_record(source, record, format):
         modelrecord.timestamp = timestamp
         modelrecord.metadata = metadataStr
         modelrecord.save()
+
+    # Add regular sets
     for s in record[0].setSpec():
         modelset, created = OaiSet.objects.get_or_create(source=source, name=s)
         modelrecord.sets.add(modelset)
+
+    # Apply virtual set extractors
+    for extractor in extractors:
+        if extractor.format() == format.name:
+            sets = extractor.getVirtualSets(fullXML)
+            for set in sets:
+                name = extractor.subset()+':'+set
+                modelset, created = OaiSet.objects.get_or_create(name=name)
+                modelrecord.sets.add(modelset)
+
 
 @shared_task
 def cleanup_resumption_tokens():
