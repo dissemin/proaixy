@@ -22,3 +22,12 @@ def ndt(d):
         return make_naive(d, UTC()).isoformat()
     return ''
 
+class OaiRequestError(Exception):
+    def __init__(self, code, reason):
+        self.code = code
+        self.reason = reason
+    def __str__(self):
+        return self.reason
+
+
+

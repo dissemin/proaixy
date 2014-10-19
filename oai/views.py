@@ -15,7 +15,7 @@ from datetime import datetime
 
 from oai.tasks import *
 from oai.models import *
-from oai.utils import to_kv_pairs
+from oai.utils import to_kv_pairs, OaiRequestError
 from oai.settings import *
 from oai.resumption import *
 
@@ -52,35 +52,19 @@ def endpoint(request):
     params = request.GET
     context['params'] = to_kv_pairs(params)
 
-    if verb == 'Identify':
-        return identify(request, context)
-    elif verb == 'GetRecord':
-        return getRecord(request, context)
-    elif verb == 'ListRecords' or verb == 'ListIdentifiers' or verb == 'ListSets':
-        if 'resumptionToken' in request.GET:
-            return resumeRequest(context, request, verb, request.GET.get('resumptionToken'))
-        queryParameters = dict()
-        error = None
-        if verb == 'ListRecords' or verb == 'ListIdentifiers':
-            queryParameters, error = getListQuery(context, request)
-        if error:
-            return error
-        return handleListQuery(request, context, verb, queryParameters)
-    elif verb == 'ListMetadataFormats':
-        queryParameters = dict()
-        matches = OaiFormat.objects.all()
-        if 'identifier' in request.GET:
-            try:
-                records = OaiRecord.objects.filter(identifier=request.GET.get('identifier'))
-                context['records'] = records
-                return render(request, 'oai/ListFormatsByIdentifier.xml', context, content_type='text/xml')
-            except ObjectDoesNotExist:
-                return formatError('badArgument', 'This identifier does not exist.', context, request)
+    try:
+        if verb == 'Identify':
+            return identify(request, context)
+        elif verb == 'GetRecord':
+            return getRecord(request, context)
+        elif verb == 'ListRecords' or verb == 'ListIdentifiers' or verb == 'ListSets':
+            return listSomething(request, context, verb)
+        elif verb == 'ListMetadataFormats':
+            return listMetadataFormats(request, context)
         else:
-            context['matches'] = matches
-            return render(request, 'oai/ListMetadataFormats.xml', context, content_type='text/xml')
-    else:
-        return formatError('badVerb','Verb "'+verb+'" is not implemented.', context, request)
+            raise OaiRequestError('badVerb', 'Verb "'+verb+'" is not implemented.')
+    except OaiRequestError as e:
+        return formatError(e.code, e.reason, context, request)
 
 def identify(request, context):
     context['baseURL'] = 'http://'+request.get_host()+'/'+oai_endpoint_name
@@ -98,20 +82,43 @@ def getRecord(request, context):
     try:
         format = OaiFormat.objects.get(name=format_name)
     except ObjectDoesNotExist:
-        return formatError('badArgument', 'The metadata format "'+format_name+'" does not exist.', context, request)
+        raise OaiRequestError('badArgument', 'The metadata format "'+format_name+'" does not exist.')
     record_id = request.GET.get('identifier')
     try:
         record = OaiRecord.objects.get(identifier=record_id)
     except ObjectDoesNotExist:
-        return formatError('badArgument', 'The record "'+record_id+'" does not exist.', context, request)
+        raise OaiRequestError('badArgument', 'The record "'+record_id+'" does not exist.')
     context['record'] = record
     return render(request, 'oai/GetRecord.xml', context, content_type='text/xml')
 
+def listSomething(request, context, verb):
+    if 'resumptionToken' in request.GET:
+        return resumeRequest(context, request, verb, request.GET.get('resumptionToken'))
+    queryParameters = dict()
+    error = None
+    if verb == 'ListRecords' or verb == 'ListIdentifiers':
+        queryParameters = getListQuery(context, request)
+    return handleListQuery(request, context, verb, queryParameters)
+
+def listMetadataFormats(request, context):
+    queryParameters = dict()
+    matches = OaiFormat.objects.all()
+    if 'identifier' in request.GET:
+        id = request.GET.get('identifier')
+        records = OaiRecord.objects.filter(identifier=id)
+        if records.count() == 0:
+            raise OaiRequestError('badArgument', 'This identifier "'+id+'" does not exist.')
+        context['records'] = records
+        return render(request, 'oai/ListFormatsByIdentifier.xml', context, content_type='text/xml')
+    else:
+        context['matches'] = matches
+        return render(request, 'oai/ListMetadataFormats.xml', context, content_type='text/xml')
+
+
 def getListQuery(context, request):
     """
-    Returns two objects:
-    - the query dictionary corresponding to the request or None if anything went wrong
-    - the error page to return if anything went wrong, or None otherwise
+    Returns the query dictionary corresponding to the request
+    Raises OaiRequestError if anything goes wrong
     """
     queryParameters = dict()
 
@@ -121,20 +128,19 @@ def getListQuery(context, request):
     # metadataPrefix
     metadataPrefix = getParams.pop('metadataPrefix', None)
     if not metadataPrefix:
-        return None, formatError('badArgument', 'The metadataPrefix argument is required.', context, request)
+        raise OaiRequestError('badArgument', 'The metadataPrefix argument is required.')
     try:
         format = OaiFormat.objects.get(name=metadataPrefix)
     except ObjectDoesNotExist:
-        return None, formatError('badArgument', 'The metadata format "'+metadataPrefix+'" does not exist.', context, request)
+        raise OaiRequestError('badArgument', 'The metadata format "'+metadataPrefix+'" does not exist.')
     queryParameters['format'] = format
 
     # set
     set = getParams.pop('set', None)
     if set:
-        # TODO check that the syntax of the set is correct
         matchingSet = OaiSet.byRepresentation(set)
         if not matchingSet:
-            return None, formatError('badArgument', 'The set "'+set+'" does not exist.', context, request)
+            raise OaiRequestError('badArgument', 'The set "'+set+'" does not exist.')
         queryParameters['sets'] = matchingSet
     
     # from
@@ -143,7 +149,8 @@ def getListQuery(context, request):
         try:
             from_ = tolerant_datestamp_to_datetime(from_)
         except DatestampError:
-            return None, formatError('badArgument', 'The parameter "from" expects a valid date, not "'+from_+"'.", context, request)
+            raise OaiRequestError('badArgument',
+                    'The parameter "from" expects a valid date, not "'+from_+"'.")
         queryParameters['timestamp__gte'] = make_aware(from_, UTC())
 
     # until
@@ -152,19 +159,20 @@ def getListQuery(context, request):
         try:
             until = tolerant_datestamp_to_datetime(until)
         except DatestampError:
-            return None, formatError('badArgument', 'The parameter "until" expects a valid date, not "'+until+"'.", context, request)
+            raise OaiRequestError('badArgument',
+                    'The parameter "until" expects a valid date, not "'+until+"'.")
         queryParameters['timestamp__lte'] = make_aware(until, UTC())
 
     # Check that from <= until
     if from_ and until and from_ > until:
-        return None, formatError('badArgument', '"from" should not be after "until".', context, request)
+        raise OaiRequestError('badArgument', '"from" should not be after "until".')
 
     # Check that there are no other arguments
     getParams.pop('verb', None)
     for key in getParams:
-        return None, formatError('badArgument', 'The argument "'+key+'" is illegal.', context, request)
+        raise OaiRequestError('badArgument', 'The argument "'+key+'" is illegal.')
 
-    return queryParameters, None
+    return queryParameters
  
 
 
