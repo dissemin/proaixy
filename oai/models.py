@@ -2,6 +2,11 @@
 from __future__ import unicode_literals
 
 from django.db import models
+import hashlib
+
+from oai.utils import nstr, ndt
+
+salt = 'change_me'
 
 # An OAI data provider
 class OaiSource(models.Model):
@@ -48,6 +53,30 @@ class OaiRecord(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
     def __unicode__(self):
         return self.identifier
+
+# A resumption token for the output interface
+class ResumptionToken(models.Model):
+    date_created = models.DateTimeField(auto_now=True)
+    queryType = models.CharField(max_length=64)
+    set = models.ForeignKey(OaiSet, null=True, blank=True)
+    metadataPrefix = models.CharField(max_length=128)
+    fro = models.DateTimeField(null=True, blank=True)
+    until = models.DateTimeField(null=True, blank=True)
+    offset = models.IntegerField()
+    cursor = models.IntegerField()
+    total_count = models.IntegerField()
+    key = models.CharField(max_length=128, null=True, blank=True)
+    def __unicode__(self):
+        return self.key
+    def genkey(self):
+        m = hashlib.md5()
+        m.update('%s_%s_%d_%s_%s_%s_%s_%d' % (salt, ndt(self.date_created),
+                        self.id, nstr(self.set), self.metadataPrefix,
+                        ndt(self.fro), ndt(self.until), self.offset))
+        self.key = m.hexdigest()
+        self.save()
+
+
     
 # A statement that some record belongs to some set.
 # class OaiSetSpec(models.Model):

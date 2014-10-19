@@ -10,6 +10,8 @@
         <setSpec>{{ setspec }}</setSpec>{% endfor %}
     </header>
     {% autoescape off %}{{ record.metadata }}{% endautoescape %}
-</record>{% endfor %}
+</record>{% endfor %}{% if token %}
+<resumptionToken cursor="{{ token.cursor }}" completeListSize="{{ token.total_count }}">{{ token.key }}</resumptionToken>
+{% endif %}
 </ListRecords>{% else %}<error code="noRecordsMatch">The query returned no results.</error>{% endif %}{% endblock %}
 

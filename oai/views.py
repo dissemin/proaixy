@@ -12,8 +12,7 @@ from datetime import datetime
 from oai.tasks import *
 from oai.models import *
 from oai.utils import to_kv_pairs
-
-oai_endpoint_name = 'oai'
+from oai.settings import *
 
 def updateSource(request, pk):
     source = get_object_or_404(OaiSource, pk=pk)
@@ -40,12 +39,15 @@ def endpoint(request):
 
     if verb == 'Identify':
         return identify(request, context)
-    elif verb == 'ListRecords':
-        return listRecords(request, context)
-    elif verb == 'ListIdentifiers':
-        return listIdentifiers(request, context)
+    elif verb == 'ListRecords' or verb == 'ListIdentifiers':
+        if 'resumptionToken' in request.GET:
+            return resumeRequest(context, request, verb, request.GET.get('resumptionToken'))
+        queryParameters, error = getListQuery(context, request)
+        if error:
+            return error
+        return handleListQuery(request, context, verb, queryParameters)
     else:
-        return formatError('badVerb','Bad verb. Verb "'+verb+'" is not implemented.', context, request)
+        return formatError('badVerb','Verb "'+verb+'" is not implemented.', context, request)
 
 def identify(request, context):
     context['baseURL'] = 'http://'+request.get_host()+'/'+oai_endpoint_name
@@ -65,16 +67,17 @@ def getListQuery(context, request):
     queryParameters = dict()
 
     # Validate arguments
+    getParams = request.GET.dict()
     
     # metadataPrefix
-    metadataPrefix = request.GET.get('metadataPrefix')
+    metadataPrefix = getParams.pop('metadataPrefix', None)
     if not metadataPrefix:
         return None, formatError('badArgument', 'The metadataPrefix argument is required.', context, request)
     # TODO check that the syntax of the format is correct
     queryParameters['format'] = metadataPrefix
 
     # set
-    set = request.GET.get('set')
+    set = getParams.pop('set', None)
     if set:
         # TODO check that the syntax of the set is correct
         matchingSet = OaiSet.objects.get(name=set)
@@ -83,7 +86,7 @@ def getListQuery(context, request):
         queryParameters['set'] = set
     
     # from
-    from_ = request.GET.get('from')
+    from_ = getParams.pop('from', None)
     if from_:
         try:
             from_ = tolerant_datestamp_to_datetime(from_)
@@ -92,7 +95,7 @@ def getListQuery(context, request):
         queryParameters['from'] = from_
 
     # until
-    until = request.GET.get('until')
+    until = getParams.pop('until', None)
     if until:
         try:
             until = tolerant_datestamp_to_datetime(until)
@@ -104,26 +107,54 @@ def getListQuery(context, request):
     if from_ and until and from_ > until:
         return None, formatError('badArgument', '"from" should not be after "until".', context, request)
 
+    # Check that there are no other arguments
+    getParams.pop('verb', None)
+    for key in getParams:
+        return None, formatError('badArgument', 'The argument "'+key+'" is illegal.', context, request)
+
     return queryParameters, None
  
 
-def listRecords(request, context):
-    queryParameters, error = getListQuery(context, request)
-    if error:
-        return error
-       
-    matches = OaiRecord.objects.filter(**queryParameters)
-    context['matches'] = matches
-    return render(request, 'oai/listRecords.xml', context, content_type='text/xml')
+def handleListQuery(request, context, queryType, parameters, offset=0):
+    # TODO use offset
+    if queryType == 'ListRecords' or queryType == 'ListIdentifiers':
+        matches = OaiRecord.objects.filter(**parameters)
+        count = matches.count()
+        # Should we create a resumption token?
+        if count-offset > results_limit:
+            token = createResumptionToken(queryType, parameters, offset+results_limit, count)
+            context['token'] = token
+        context['matches'] = matches[offset:(offset+results_limit)]
+        return render(request, 'oai/'+queryType+'.xml', context, content_type='text/xml')
 
-def listIdentifiers(request, context):
-    queryParameters, error = getListQuery(context, request)
-    if error:
-        return error
 
-    matches = OaiRecord.objects.filter(**queryParameters)
-    context['matches'] = matches
-    return render(request, 'oai/listIdentifiers.xml', context, content_type='text/xml')
+def createResumptionToken(queryType, queryParameters, offset, totalCount):
+    token = ResumptionToken(queryType=queryType, metadataPrefix=queryParameters['format'], offset=offset,
+            cursor=offset-results_limit, total_count=totalCount)
+    if 'from' in queryParameters:
+        token.fro = make_aware(queryParameters['from'], UTC())
+    if 'until' in queryParameters:
+        token.until = make_aware(queryParameter['until'], UTC())
+    if 'set' in queryParameters:
+        token.set = queryParameters['set']
+    token.save()
+    token.genkey()
+    return token
+
+def resumeRequest(context, request, queryType, key):
+    token = ResumptionToken.objects.get(queryType=queryType, key=key)
+    if not token:
+        return formatError('badResumptionToken', 'This resumption token is invalid.', context, request)
+    parameters = dict()
+    parameters['format'] = token.metadataPrefix
+    if token.set:
+        parameters['set'] = token.set
+    if token.fro:
+        parameters['from'] = make_naive(token.fro, UTC())
+    if token.until:
+        parameters['until'] = make_naive(token.until, UTC())
+    return handleListQuery(request, context, queryType, parameters, token.offset)
+    
 
 
 
