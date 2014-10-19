@@ -1,0 +1,9 @@
+{% extends "oai/endpoint-common.xml" %}
+{% block mainContent %}
+<ListMetadataFormats>{% for rec in records %}
+<metadataFormat>
+    <metadataPrefix>{{ rec.format.name }}</metadataPrefix>
+    <schema>{{ rec.format.shema }}</schema>
+    <metadataNamespace>{{ rec.format.namespace }}</metadataNamespace>
+</metadataFormat>{% endfor %}
+</ListMetadataFormats>{% endblock mainContent %}

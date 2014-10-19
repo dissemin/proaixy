@@ -49,6 +49,8 @@ def endpoint(request):
 
     if verb == 'Identify':
         return identify(request, context)
+    elif verb == 'GetRecord':
+        return getRecord(request, context)
     elif verb == 'ListRecords' or verb == 'ListIdentifiers' or verb == 'ListSets':
         if 'resumptionToken' in request.GET:
             return resumeRequest(context, request, verb, request.GET.get('resumptionToken'))
@@ -59,6 +61,19 @@ def endpoint(request):
         if error:
             return error
         return handleListQuery(request, context, verb, queryParameters)
+    elif verb == 'ListMetadataFormats':
+        queryParameters = dict()
+        matches = OaiFormat.objects.all()
+        if 'identifier' in request.GET:
+            try:
+                records = OaiRecord.objects.filter(identifier=request.GET.get('identifier'))
+                context['records'] = records
+                return render(request, 'oai/ListFormatsByIdentifier.xml', context, content_type='text/xml')
+            except ObjectDoesNotExist:
+                return formatError('badArgument', 'This identifier does not exist.', context, request)
+        else:
+            context['matches'] = matches
+            return render(request, 'oai/ListMetadataFormats.xml', context, content_type='text/xml')
     else:
         return formatError('badVerb','Verb "'+verb+'" is not implemented.', context, request)
 
@@ -66,10 +81,24 @@ def identify(request, context):
     context['baseURL'] = 'http://'+request.get_host()+'/'+oai_endpoint_name
     earliest = OaiRecord.objects.order_by('timestamp').first()
     if earliest:
-        context['earliestDatestamp'] = timezone.make_naive(earliest.timestamp, timezone.UTC())
+        context['earliestDatestamp'] = earliest.timestamp
     else:
-        context['earliestDatestamp'] = '1990-01-01'
+        context['earliestDatestamp'] = timezone.now()
     return render(request, 'oai/identify.xml', context, content_type='text/xml')
+
+def getRecord(request, context):
+    format_name = request.GET.get('metadataPrefix')
+    try:
+        format = OaiFormat.objects.get(name=format_name)
+    except ObjectDoesNotExist:
+        return formatError('badArgument', 'The metadata format "'+format_name+'" does not exist.', context, request)
+    record_id = request.GET.get('identifier')
+    try:
+        record = OaiRecord.objects.get(identifier=record_id)
+    except ObjectDoesNotExist:
+        return formatError('badArgument', 'The record "'+record_id+'" does not exist.', context, request)
+    context['record'] = record
+    return render(request, 'oai/GetRecord.xml', context, content_type='text/xml')
 
 def getListQuery(context, request):
     """
@@ -86,8 +115,11 @@ def getListQuery(context, request):
     metadataPrefix = getParams.pop('metadataPrefix', None)
     if not metadataPrefix:
         return None, formatError('badArgument', 'The metadataPrefix argument is required.', context, request)
-    # TODO check that the syntax of the format is correct
-    queryParameters['format'] = metadataPrefix
+    try:
+        format = OaiFormat.objects.get(name=metadataPrefix)
+    except ObjectDoesNotExist:
+        return None, formatError('badArgument', 'The metadata format "'+metadataPrefix+'" does not exist.', context, request)
+    queryParameters['format'] = format
 
     # set
     set = getParams.pop('set', None)

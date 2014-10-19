@@ -1,0 +1,9 @@
+{% extends "oai/endpoint-common.xml" %}
+{% block mainContent %}
+<ListMetadataFormats>{% for meta in matches.all %}
+<metadataFormat>
+    <metadataPrefix>{{ meta.name }}</metadataPrefix>
+    <schema>{{ meta.shema }}</schema>
+    <metadataNamespace>{{ meta.namespace }}</metadataNamespace>
+</metadataFormat>{% endfor %}
+</ListMetadataFormats>{% endblock mainContent %}

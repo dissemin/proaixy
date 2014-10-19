@@ -33,12 +33,9 @@ def handleListQuery(request, context, queryType, parameters, offset=0):
     return render(request, 'oai/'+queryType+'.xml', context, content_type='text/xml')
 
 
-
-
 def createResumptionToken(queryType, queryParameters, offset, totalCount):
     token = ResumptionToken(queryType=queryType, offset=offset,
             cursor=offset-results_limit, total_count=totalCount)
-    print(str(queryParameters))
     if 'format' in queryParameters:
         token.metadataPrefix = queryParameters['format']
     if 'timestamp__gte' in queryParameters:

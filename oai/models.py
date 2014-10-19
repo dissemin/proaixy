@@ -30,8 +30,11 @@ class OaiError(models.Model):
 # An OAI set. If it is not associated with a source, it means that it is introduced by us
 class OaiSet(models.Model):
     source = models.ForeignKey(OaiSource, null=True, blank=True)
-    name = models.CharField(max_length=128)
-    fullname = models.CharField(max_length=128, null=True, blank=True)
+    name = models.CharField(max_length=512)
+    fullname = models.CharField(max_length=512, null=True, blank=True)
+
+    unique_together = ('name','source')
+
     def __unicode__(self):
         prefix = own_set_prefix
         if self.source:
@@ -55,6 +58,12 @@ class OaiSet(models.Model):
         except ObjectDoesNotExist:
             return None
 
+class OaiFormat(models.Model):
+    name = models.CharField(max_length=128)
+    schema = models.CharField(max_length=512, null=True, blank=True)
+    namespace = models.CharField(max_length=512, null=True, blank=True)
+    def __unicode__(self):
+        return self.name
 
 # A record from an OAI source
 class OaiRecord(models.Model):
@@ -62,7 +71,7 @@ class OaiRecord(models.Model):
     # Last modified by the OAI source
     timestamp = models.DateTimeField()
     # The format of the metadata
-    format = models.CharField(max_length=128)
+    format = models.ForeignKey(OaiFormat)
     # The unique ID of the metadata from the source
     identifier = models.CharField(max_length=128, unique=True)
     # The sets it belongs to
@@ -79,7 +88,7 @@ class ResumptionToken(models.Model):
     date_created = models.DateTimeField(auto_now=True)
     queryType = models.CharField(max_length=64)
     set = models.ForeignKey(OaiSet, null=True, blank=True)
-    metadataPrefix = models.CharField(max_length=128, null=True, blank=True)
+    metadataPrefix = models.ForeignKey(OaiFormat, null=True, blank=True)
     fro = models.DateTimeField(null=True, blank=True)
     until = models.DateTimeField(null=True, blank=True)
     offset = models.IntegerField()

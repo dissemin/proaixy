@@ -23,11 +23,11 @@ logger = get_task_logger(__name__)
 @shared_task
 def fetch_from_source(pk):
     source = OaiSource.objects.get(pk=pk)
-    format = metadata_format # defined in oai.settings
+    format, created = OaiFormat.objects.get_or_create(name=metadata_format) # defined in oai.settings
     #try:
     # Set up the OAI fetcher
     registry = MetadataRegistry()
-    registry.registerReader(format, oai_dc_reader)
+    registry.registerReader(format.name, oai_dc_reader)
     client = Client(source.url, registry)
     client.updateGranularity()
 
@@ -41,15 +41,16 @@ def fetch_from_source(pk):
     while start_date <= current_date:
         print "Fetching records between "+str(start_date)+" and "+str(until_date)
         try:
-            listRecords = client.listRecords(metadataPrefix=format, from_=start_date, until=until_date)
+            listRecords = client.listRecords(metadataPrefix=format.name, from_=start_date, until=until_date)
         except NoRecordsMatchError:
             listRecords = []
 
         for record in listRecords:
             update_record(source, record, format)
 
-        source.last_update = make_aware(until_date, UTC())
-        source.save()
+        # TODO TODO uncomment
+     #   source.last_update = make_aware(until_date, UTC())
+     #   source.save()
         until_date += time_chunk
         start_date += time_chunk
         #except Exception as e:
@@ -65,7 +66,9 @@ def fetch_sets_from_source(pk):
     
     listSets = client.listSets()
     for set in listSets:
-        OaiSet.objects.get_or_create(source=source, name=set[0], defaults={'fullname':set[1]})
+        s, created = OaiSet.objects.get_or_create(source=source, name=set[0], defaults={'fullname':set[1]})
+        s.fullname=set[1]
+        s.save()
 
 def update_record(source, record, format):
     fullXML = record[1].element()
