@@ -7,6 +7,7 @@
     <identifier>{{ record.identifier }}</identifier>
     <datestamp>{{ record.timestamp | isoformat }}</datestamp>{% for setspec in record.sets.all %}
     <setSpec>{{ setspec }}</setSpec>{% endfor %}
-</header>{% endfor %}
+</header>{% endfor %}{% if token %}
+<resumptionToken cursor="{{ token.cursor }}" completeListSize="{{ token.total_count }}">{{ token.key }}</resumptionToken>{% endif %}
 </ListIdentifiers>{% else %}<error code="noRecordsMatch">The query returned no results.</error>{% endif %}{% endblock %}
 

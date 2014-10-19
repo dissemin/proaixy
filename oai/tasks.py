@@ -56,6 +56,17 @@ def fetch_from_source(pk):
     #    error = OaiError(source=source, text=unicode(e))
     #    error.save()
 
+@shared_task
+def fetch_sets_from_source(pk):
+    source = OaiSource.objects.get(pk=pk)
+    registry = MetadataRegistry()
+    registry.registerReader(format, oai_dc_reader)
+    client = Client(source.url, registry)
+    
+    listSets = client.listSets()
+    for set in listSets:
+        OaiSet.objects.get_or_create(source=source, name=set[0], defaults={'fullname':set[1]})
+
 def update_record(source, record, format):
     fullXML = record[1].element()
     metadataStr = etree.tostring(fullXML, pretty_print=True)

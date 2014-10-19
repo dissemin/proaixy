@@ -29,11 +29,12 @@ class OaiError(models.Model):
 class OaiSet(models.Model):
     source = models.ForeignKey(OaiSource, null=True, blank=True)
     name = models.CharField(max_length=128)
+    fullname = models.CharField(max_length=128, null=True, blank=True)
     def __unicode__(self):
         prefix = 'proaixy'
         if self.source:
             prefix = self.source.name
-        return prefix+'_'+self.name
+        return prefix+':'+self.name
 
 
 # A record from an OAI source
@@ -59,7 +60,7 @@ class ResumptionToken(models.Model):
     date_created = models.DateTimeField(auto_now=True)
     queryType = models.CharField(max_length=64)
     set = models.ForeignKey(OaiSet, null=True, blank=True)
-    metadataPrefix = models.CharField(max_length=128)
+    metadataPrefix = models.CharField(max_length=128, null=True, blank=True)
     fro = models.DateTimeField(null=True, blank=True)
     until = models.DateTimeField(null=True, blank=True)
     offset = models.IntegerField()

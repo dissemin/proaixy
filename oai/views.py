@@ -22,6 +22,11 @@ def updateSource(request, pk):
     fetch_from_source.apply_async(eta=timezone.now(), kwargs={'pk':pk})
     return render(request, 'oai/updateSource.html', {'source':source})
 
+def updateSets(request, pk):
+    source = get_object_or_404(OaiSource, pk=pk)
+    fetch_sets_from_source.apply_async(eta=timezone.now(), kwargs={'pk':pk})
+    return render(request, 'oai/updateSource.html', {'source':source})
+
 def formatError(errorCode, errorMessage, context, request):
     context['errorCode'] = errorCode
     context['errorMessage'] = errorMessage
@@ -42,10 +47,13 @@ def endpoint(request):
 
     if verb == 'Identify':
         return identify(request, context)
-    elif verb == 'ListRecords' or verb == 'ListIdentifiers':
+    elif verb == 'ListRecords' or verb == 'ListIdentifiers' or verb == 'ListSets':
         if 'resumptionToken' in request.GET:
             return resumeRequest(context, request, verb, request.GET.get('resumptionToken'))
-        queryParameters, error = getListQuery(context, request)
+        queryParameters = dict()
+        error = None
+        if verb == 'ListRecords' or verb == 'ListIdentifiers':
+            queryParameters, error = getListQuery(context, request)
         if error:
             return error
         return handleListQuery(request, context, verb, queryParameters)
@@ -122,18 +130,24 @@ def handleListQuery(request, context, queryType, parameters, offset=0):
     # TODO use offset
     if queryType == 'ListRecords' or queryType == 'ListIdentifiers':
         matches = OaiRecord.objects.filter(**parameters)
-        count = matches.count()
-        # Should we create a resumption token?
-        if count-offset > results_limit:
-            token = createResumptionToken(queryType, parameters, offset+results_limit, count)
-            context['token'] = token
-        context['matches'] = matches[offset:(offset+results_limit)]
-        return render(request, 'oai/'+queryType+'.xml', context, content_type='text/xml')
+    elif queryType == 'ListSets':
+        matches = OaiSet.objects.all()
+    else:
+        return formatError('badArgument', 'Illegal verb.')
+    count = matches.count()
+    # Should we create a resumption token?
+    if count-offset > results_limit:
+        token = createResumptionToken(queryType, parameters, offset+results_limit, count)
+        context['token'] = token
+    context['matches'] = matches[offset:(offset+results_limit)]
+    return render(request, 'oai/'+queryType+'.xml', context, content_type='text/xml')
 
 
 def createResumptionToken(queryType, queryParameters, offset, totalCount):
-    token = ResumptionToken(queryType=queryType, metadataPrefix=queryParameters['format'], offset=offset,
+    token = ResumptionToken(queryType=queryType, offset=offset,
             cursor=offset-results_limit, total_count=totalCount)
+    if 'format' in queryParameters:
+        token.metadataPrefix = queryParameters['format']
     if 'from' in queryParameters:
         token.fro = make_aware(queryParameters['from'], UTC())
     if 'until' in queryParameters:

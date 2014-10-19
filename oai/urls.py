@@ -7,5 +7,6 @@ from oai.views import *
 
 urlpatterns = patterns('',
         url(r'^'+oai_endpoint_name+'$', endpoint, name='oaiEndpoint'),
-        url(r'^source/(?P<pk>\d+)/update/$', updateSource, name='updateSource')
+        url(r'^source/(?P<pk>\d+)/update/$', updateSource, name='updateSource'),
+        url(r'^source/(?P<pk>\d+)/updatesets/$', updateSets, name='updateSets')
 )
