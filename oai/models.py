@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
+from djcelery.models import TaskMeta, PeriodicTask, TaskState
+
 import hashlib
 
 from oai.utils import nstr, ndt
@@ -12,12 +14,32 @@ salt = 'change_me'
 
 # An OAI data provider
 class OaiSource(models.Model):
-    url = models.URLField(max_length=256)
-    name = models.CharField(max_length=100)
+    url = models.URLField(max_length=256, unique=True)
+    name = models.CharField(max_length=100, unique=True)
     last_update = models.DateTimeField()
+    day_granularity = models.BooleanField()
 
+    harvester = models.CharField(max_length=128, null=True, blank=True)
+    status = models.CharField(max_length=256, null=True, blank=True)
+    last_change = models.DateTimeField(auto_now=True)
     def __unicode__(self):
         return self.name
+    def sets(self):
+        return OaiSet.objects.filter(source=self.pk)
+    def records(self):
+        return OaiRecord.objects.filter(source=self.pk)
+    def harvesting(self):
+        return not (self.harvesterState() in ['SUCCESS', 'FAILURE', 'REVOKED', 'DELETED'])
+    def harvesterTask(self):
+        try:
+            return TaskMeta.objects.get(task_id=self.harvester)
+        except ObjectDoesNotExist:
+            pass
+    def harvesterState(self):
+        task = self.harvesterTask()
+        if task:
+            return task.status
+        return 'DELETED'
 
 # An error encountered while harvesting an OAI data provider
 class OaiError(models.Model):

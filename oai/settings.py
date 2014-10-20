@@ -21,3 +21,6 @@ own_set_prefix = 'proaixy'
 
 extractors = [OAIDCAuthorExtractor]
 
+# backend settings
+NB_RECORDS_BEFORE_COMMIT = 100 # size of the oai record batches between commits
+

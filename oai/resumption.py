@@ -41,7 +41,7 @@ def createResumptionToken(queryType, queryParameters, offset, totalCount):
     if 'timestamp__gte' in queryParameters:
         token.fro = make_aware(queryParameters['timestamp__gte'], UTC())
     if 'timestamp__lte' in queryParameters:
-        token.until = make_aware(queryParameter['timestamp__lte'], UTC())
+        token.until = make_aware(queryParameters['timestamp__lte'], UTC())
     if 'sets' in queryParameters:
         token.set = queryParameters['sets']
     token.save()

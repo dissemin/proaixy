@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
 import oai.settings
+import djcelery
 from datetime import timedelta
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -39,8 +40,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'djcelery',
     'oai',
+    'djcelery',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -93,9 +94,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # Celery config
+djcelery.setup_loader()
 BROKER_URL = 'amqp://guest:guest@127.0.0.1:5672//'
-CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
-
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 # This has to be added to the model instead.
 
 #CELERYBEAT_SCHEDULE = {

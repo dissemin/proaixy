@@ -8,9 +8,12 @@ from django.views import generic
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import user_passes_test
+from django.http import HttpResponseRedirect
 
 from oaipmh.datestamp import tolerant_datestamp_to_datetime
 from oaipmh.error import DatestampError
+
+from celery.task.control import revoke
 
 from datetime import datetime
 
@@ -30,12 +33,38 @@ def controlPannel(request):
             'records': OaiRecord.objects.all(),
             'formats': OaiRecord.objects.all(),
             'addSourceForm': AddSourceForm() }
+
+    if request.method == 'POST':
+        form = AddSourceForm(request.POST)
+        if form.is_valid():
+            url = form.cleaned_data['url']
+            errorMsg = addSourceFromURL(url)
+            if errorMsg:
+                context['errorMsg'] = errorMsg
+        else:
+            context['errorMsg'] = 'Invalid URL.'
+    elif 'harvest' in request.GET:
+        source = get_object_or_404(OaiSource, pk=request.GET.get('harvest'))
+        if not source.harvesting():
+            fetch_from_source.delay(source.pk)
+            return HttpResponseRedirect('/')
+    elif 'set' in request.GET:
+        source = get_object_or_404(OaiSource, pk=request.GET.get('set'))
+        if not source.harvesting():
+            fetch_sets_from_source.delay(source.pk)
+            return HttpResponseRedirect('/')
+    elif 'revoke' in request.GET:
+        id = request.GET.get('revoke')
+        task = get_object_or_404(TaskMeta, task_id=id)
+        revoke(id, terminate=True)
+        return HttpResponseRedirect('/')
+
     return render(request, 'oai/controlPannel.html', context)
 
 def updateSource(request, pk):
     source = get_object_or_404(OaiSource, pk=pk)
-    fetch_from_source.apply_async(eta=timezone.now(), kwargs={'pk':pk})
-    return render(request, 'oai/updateSource.html', {'source':source})
+    id = fetch_from_source.delay(pk)
+    return render(request, 'oai/updateSource.html', {'source':source, 'task':id})
 
 def updateSets(request, pk):
     source = get_object_or_404(OaiSource, pk=pk)

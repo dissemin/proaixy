@@ -2,7 +2,9 @@
 from __future__ import unicode_literals
 
 from lxml import etree
+from lxml import html
 import unicodedata
+import HTMLParser
 import re
 
 class VirtualSetExtractor:
@@ -47,7 +49,8 @@ class OAIDCAuthorExtractor(VirtualSetExtractor):
         matches = xpath_ev.evaluate('oai_dc:dc/dc:creator/text()')
         result = []
         for v in matches:
-            name = unicodedata.normalize('NFKD',unicode(v)).encode('ASCII', 'ignore').lower()
+            name = unicode(html.fromstring(v).text)
+            name = unicodedata.normalize('NFKD',name).encode('ASCII', 'ignore').lower()
             name = name.strip()
             name = OAIDCAuthorExtractor.separator_re.sub('_',name)
             name = OAIDCAuthorExtractor.final_nontext_re.sub('',name)

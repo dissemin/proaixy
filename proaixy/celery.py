@@ -6,6 +6,8 @@ from __future__ import absolute_import
 import os
 
 from celery import Celery
+from kombu import serialization
+serialization.registry._decoders.pop("application/x-python-serialize")
 
 from django.conf import settings
 
@@ -19,6 +21,7 @@ app = Celery('proaixy')
 app.config_from_object('django.conf:settings')
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
+app.conf.update(CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend')
 
 @app.task(bind=True)
 def debug_task(self):
