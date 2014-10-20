@@ -39,6 +39,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'djcelery',
     'oai',
 )
 
@@ -68,6 +69,9 @@ DATABASES = {
     }
 }
 
+# Login and athentication
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
@@ -92,12 +96,15 @@ STATIC_URL = '/static/'
 BROKER_URL = 'amqp://guest:guest@127.0.0.1:5672//'
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 
-CELERYBEAT_SCHEDULE = {
-    'cleanup_resumption_tokens': {
-                'task': 'oai.tasks.cleanup_resumption_tokens',
-                'schedule': oai.settings.resumption_token_validity,
-                'args': ()},
-    }
+# This has to be added to the model instead.
+
+#CELERYBEAT_SCHEDULE = {
+#    'cleanup_resumption_tokens': {
+#                'task': 'oai.tasks.cleanup_resumption_tokens',
+#                'schedule': oai.settings.resumption_token_validity,
+#                'args': ()},
+#    }
+CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
 CELERY_TIMEZONE = 'UTC'
 

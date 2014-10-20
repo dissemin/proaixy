@@ -7,6 +7,7 @@ from django.template import RequestContext, loader
 from django.views import generic
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.decorators import user_passes_test
 
 from oaipmh.datestamp import tolerant_datestamp_to_datetime
 from oaipmh.error import DatestampError
@@ -18,6 +19,18 @@ from oai.models import *
 from oai.utils import to_kv_pairs, OaiRequestError
 from oai.settings import *
 from oai.resumption import *
+from oai.forms import *
+
+def is_admin(user):
+    return user.is_superuser
+
+@user_passes_test(is_admin)
+def controlPannel(request):
+    context = { 'sources': OaiSource.objects.all(),
+            'records': OaiRecord.objects.all(),
+            'formats': OaiRecord.objects.all(),
+            'addSourceForm': AddSourceForm() }
+    return render(request, 'oai/controlPannel.html', context)
 
 def updateSource(request, pk):
     source = get_object_or_404(OaiSource, pk=pk)
