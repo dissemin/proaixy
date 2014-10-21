@@ -160,8 +160,9 @@ def getListQuery(context, request):
     """
     queryParameters = dict()
 
-    # Validate arguments
-    getParams = request.GET.dict()
+    # Both POST and GET arguments *must* be supported according to the standard
+    # In this implementation, POST arguments are prioritary.
+    getParams = dict(request.GET.dict().items() + request.POST.dict().items())
     
     # metadataPrefix
     metadataPrefix = getParams.pop('metadataPrefix', None)
