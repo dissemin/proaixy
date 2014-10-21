@@ -11,6 +11,7 @@ from urllib2 import URLError, HTTPError
 from django.utils.timezone import now, make_aware, make_naive, UTC
 from django.db import IntegrityError, transaction
 from datetime import timedelta
+from time import sleep
 
 from oaipmh.client import Client
 from oaipmh.metadata import MetadataRegistry, oai_dc_reader
@@ -80,6 +81,7 @@ def fetch_from_source(self, pk):
                 for record in listRecords:
                     recordFound = True
                     update_record(source, record, format)
+                    sleep(SLEEP_TIME_BETWEEN_RECORDS)
                     i += 1
                     if i > NB_RECORDS_BEFORE_COMMIT:
                         break

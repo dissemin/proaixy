@@ -21,5 +21,5 @@ RESUMPTION_TOKEN_SALT = 'change_me' # salt used to generate resumption tokens
 
 
 # backend settings
-NB_RECORDS_BEFORE_COMMIT = 100 # size of the oai record batches between commits
-
+NB_RECORDS_BEFORE_COMMIT = 1 # size of the oai record batches between commits
+SLEEP_TIME_BETWEEN_RECORDS = 0.5 # seconds
