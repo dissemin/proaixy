@@ -70,8 +70,10 @@ def fetch_from_source(self, pk):
         recordFound = True
         while recordFound:
             i = 0
+            recordFound = False
             with transaction.atomic():
                 for record in listRecords:
+                    recordFound = True
                     update_record(source, record, format)
                     i += 1
                     if i > NB_RECORDS_BEFORE_COMMIT:
