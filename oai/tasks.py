@@ -22,7 +22,7 @@ from oai.settings import *
 
 logger = get_task_logger(__name__)
 
-def addSourceFromURL(url):
+def addSourceFromURL(url, prefix):
     try:
         registry = MetadataRegistry()
         client = Client(url, registry)
@@ -31,7 +31,8 @@ def addSourceFromURL(url):
         last_update = make_aware(identify.earliestDatestamp(), UTC())
         day_granularity = (identify.granularity() == 'YYYY-MM-DD')
         try:
-            source = OaiSource(url=url, name=name, last_update=last_update, day_granularity=day_granularity)
+            source = OaiSource(url=url, name=name, prefix=prefix,
+                    last_update=last_update, day_granularity=day_granularity)
             source.save()
         except IntegrityError as e:
             return str(e)

@@ -18,6 +18,7 @@ results_limit = 100
 resumption_token_validity = timedelta(hours=6)
 metadata_format = 'oai_dc'
 own_set_prefix = 'proaixy'
+salt = 'change_me' # salt used to generate resumption tokens
 
 extractors = [OAIDCAuthorExtractor]
 

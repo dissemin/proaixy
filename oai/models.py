@@ -8,20 +8,19 @@ from djcelery.models import TaskMeta, PeriodicTask, TaskState
 import hashlib
 
 from oai.utils import nstr, ndt
-from oai.settings import own_set_prefix
-
-salt = 'change_me'
+from oai.settings import own_set_prefix, salt
 
 # An OAI data provider
 class OaiSource(models.Model):
-    url = models.URLField(max_length=256, unique=True)
-    name = models.CharField(max_length=100, unique=True)
-    last_update = models.DateTimeField()
-    day_granularity = models.BooleanField()
+    url = models.URLField(max_length=256, unique=True) # The URL of the OAI endpoint
+    name = models.CharField(max_length=100, unique=True) # The name of the repository as exposed by Identify
+    prefix = models.CharField(max_length=100, unique=True) # The prefix used for the virtual sets
+    last_update = models.DateTimeField() # Records with a modification date earlier than that are fetched
+    day_granularity = models.BooleanField() # True if the endpoint does not store datetimes but only dates
 
-    harvester = models.CharField(max_length=128, null=True, blank=True)
-    status = models.CharField(max_length=256, null=True, blank=True)
-    last_change = models.DateTimeField(auto_now=True)
+    harvester = models.CharField(max_length=128, null=True, blank=True) # Task id of the harvester
+    status = models.CharField(max_length=256, null=True, blank=True) # Status of the harvester
+    last_change = models.DateTimeField(auto_now=True) # Last change made to this model
     def __unicode__(self):
         return self.name
     def sets(self):
@@ -60,7 +59,7 @@ class OaiSet(models.Model):
     def __unicode__(self):
         prefix = own_set_prefix
         if self.source:
-            prefix = self.source.name
+            prefix = self.source.prefix
         return prefix+':'+self.name
     @staticmethod
     def byRepresentation(name):
@@ -73,7 +72,7 @@ class OaiSet(models.Model):
         prefix = name[:scpos]
         try:
             if prefix != own_set_prefix:
-                source = OaiSource.objects.get(name=prefix)
+                source = OaiSource.objects.get(prefix=prefix)
             else:
                 source = None
             return OaiSet.objects.get(source=source,name=name[scpos+1:])

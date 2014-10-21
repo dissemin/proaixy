@@ -38,7 +38,8 @@ def controlPannel(request):
         form = AddSourceForm(request.POST)
         if form.is_valid():
             url = form.cleaned_data['url']
-            errorMsg = addSourceFromURL(url)
+            prefix = form.cleaned_data['prefix']
+            errorMsg = addSourceFromURL(url, prefix)
             if errorMsg:
                 context['errorMsg'] = errorMsg
         else:
