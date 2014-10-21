@@ -46,12 +46,16 @@ def controlPannel(request):
     elif 'harvest' in request.GET:
         source = get_object_or_404(OaiSource, pk=request.GET.get('harvest'))
         if not source.harvesting():
-            fetch_from_source.delay(source.pk)
+            source.harvester = fetch_from_source.delay(source.pk)
+            source.status = 'records'
+            source.save()
             return HttpResponseRedirect('/')
     elif 'set' in request.GET:
         source = get_object_or_404(OaiSource, pk=request.GET.get('set'))
         if not source.harvesting():
-            fetch_sets_from_source.delay(source.pk)
+            source.harvester = fetch_sets_from_source.delay(source.pk)
+            source.status = 'sets'
+            source.save()
             return HttpResponseRedirect('/')
     elif 'revoke' in request.GET:
         id = request.GET.get('revoke')
@@ -61,16 +65,7 @@ def controlPannel(request):
 
     return render(request, 'oai/controlPannel.html', context)
 
-def updateSource(request, pk):
-    source = get_object_or_404(OaiSource, pk=pk)
-    id = fetch_from_source.delay(pk)
-    return render(request, 'oai/updateSource.html', {'source':source, 'task':id})
-
-def updateSets(request, pk):
-    source = get_object_or_404(OaiSource, pk=pk)
-    fetch_sets_from_source.apply_async(eta=timezone.now(), kwargs={'pk':pk})
-    return render(request, 'oai/updateSource.html', {'source':source})
-
+@user_passes_test(is_admin)
 def updateFormats(request, pk):
     source = get_object_or_404(OaiSource, pk=pk)
     fetch_formats_from_source.apply_async(eta=timezone.now(), kwargs={'pk':pk})

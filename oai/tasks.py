@@ -42,10 +42,7 @@ def fetch_from_source(self, pk):
     self.update_state(state='PROGRESS')
 
     source = OaiSource.objects.get(pk=pk)
-    source.harvester = self.request.id
     baseStatus = 'records'
-    source.status = baseStatus
-    source.save()
 
     # Set up the OAI fetcher
     format, created = OaiFormat.objects.get_or_create(name=metadata_format) # defined in oai.settings
@@ -93,10 +90,7 @@ def fetch_sets_from_source(self, pk):
     self.update_state(state='PROGRESS')
 
     source = OaiSource.objects.get(pk=pk)
-    source.harvester = self.request.id
     baseStatus = 'sets'
-    source.status = baseStatus
-    source.save()
 
     registry = MetadataRegistry()
     client = Client(source.url, registry)
