@@ -26,16 +26,16 @@ def handleListQuery(request, context, queryType, parameters, offset=0):
         return formatError('badArgument', 'Illegal verb.')
     count = matches.count()
     # Should we create a resumption token?
-    if count-offset > results_limit:
-        token = createResumptionToken(queryType, parameters, offset+results_limit, count)
+    if count-offset > RESULTS_LIMIT:
+        token = createResumptionToken(queryType, parameters, offset+RESULTS_LIMIT, count)
         context['token'] = token
-    context['matches'] = matches[offset:(offset+results_limit)]
+    context['matches'] = matches[offset:(offset+RESULTS_LIMIT)]
     return render(request, 'oai/'+queryType+'.xml', context, content_type='text/xml')
 
 
 def createResumptionToken(queryType, queryParameters, offset, totalCount):
     token = ResumptionToken(queryType=queryType, offset=offset,
-            cursor=offset-results_limit, total_count=totalCount)
+            cursor=offset-RESULTS_LIMIT, total_count=totalCount)
     if 'format' in queryParameters:
         token.metadataPrefix = queryParameters['format']
     if 'timestamp__gte' in queryParameters:

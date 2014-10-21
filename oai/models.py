@@ -8,7 +8,7 @@ from djcelery.models import TaskMeta, PeriodicTask, TaskState
 import hashlib
 
 from oai.utils import nstr, ndt
-from oai.settings import own_set_prefix, salt
+from oai.settings import OWN_SET_PREFIX, RESUMPTION_TOKEN_SALT
 
 # An OAI data provider
 class OaiSource(models.Model):
@@ -57,7 +57,7 @@ class OaiSet(models.Model):
     unique_together = ('name','source')
 
     def __unicode__(self):
-        prefix = own_set_prefix
+        prefix = OWN_SET_PREFIX
         if self.source:
             prefix = self.source.prefix
         return prefix+':'+self.name
@@ -71,7 +71,7 @@ class OaiSet(models.Model):
             return None
         prefix = name[:scpos]
         try:
-            if prefix != own_set_prefix:
+            if prefix != OWN_SET_PREFIX:
                 source = OaiSource.objects.get(prefix=prefix)
             else:
                 source = None
@@ -120,7 +120,7 @@ class ResumptionToken(models.Model):
         return self.key
     def genkey(self):
         m = hashlib.md5()
-        m.update('%s_%s_%d_%s_%s_%s_%s_%d' % (salt, ndt(self.date_created),
+        m.update('%s_%s_%d_%s_%s_%s_%s_%d' % (RESUMPTION_TOKEN_SALT, ndt(self.date_created),
                         self.id, nstr(self.set), self.metadataPrefix,
                         ndt(self.fro), ndt(self.until), self.offset))
         self.key = m.hexdigest()

@@ -105,9 +105,9 @@ def endpoint(request):
         return formatError(e.code, e.reason, context, request)
 
 def identify(request, context):
-    context['baseURL'] = 'http://'+request.get_host()+'/'+oai_endpoint_name
-    context['repoName'] = repository_name
-    context['adminEmail'] = admin_email
+    context['baseURL'] = 'http://'+request.get_host()+'/'+OAI_ENDPOINT_NAME
+    context['repoName'] = REPOSITORY_NAME
+    context['adminEmail'] = ADMIN_EMAIL
     earliest = OaiRecord.objects.order_by('timestamp').first()
     if earliest:
         context['earliestDatestamp'] = earliest.timestamp

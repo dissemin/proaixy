@@ -7,7 +7,7 @@ from django.contrib.auth.views import login
 from oai.views import *
 
 urlpatterns = patterns('',
-        url(r'^'+oai_endpoint_name+'$', endpoint, name='oaiEndpoint'),
+        url(r'^'+OAI_ENDPOINT_NAME+'$', endpoint, name='oaiEndpoint'),
         url(r'^$', controlPannel, name='controlPannel'),
         url(r'^login/$', login, {'template_name': 'admin/login.html'}),
         url(r'^source/(?P<pk>\d+)/updateformats/$', updateFormats, name='updateFormats')

@@ -50,14 +50,14 @@ def fetch_from_source(self, pk):
     baseStatus = 'records'
 
     # Set up the OAI fetcher
-    format, created = OaiFormat.objects.get_or_create(name=metadata_format) # defined in oai.settings
+    format, created = OaiFormat.objects.get_or_create(name=METADATA_FORMAT) # defined in oai.settings
     registry = MetadataRegistry()
     registry.registerReader(format.name, oai_dc_reader)
     client = Client(source.url, registry)
     client._day_granularity = source.day_granularity
 
     # Limit queries to records in a time range of 7 days (by default)
-    time_chunk = query_time_range
+    time_chunk = QUERY_TIME_RANGE
 
     start_date = make_naive(source.last_update, UTC())
     current_date = make_naive(now(), UTC())
@@ -162,7 +162,7 @@ def update_record(source, record, format):
 
 @shared_task
 def cleanup_resumption_tokens():
-    threshold = now() - resumption_token_validity
+    threshold = now() - RESUMPTION_TOKEN_VALIDITY
     ResumptionToken.objects.filter(date_created__lt=threshold).delete()
 
 

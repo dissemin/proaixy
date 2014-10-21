@@ -103,7 +103,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 #CELERYBEAT_SCHEDULE = {
 #    'cleanup_resumption_tokens': {
 #                'task': 'oai.tasks.cleanup_resumption_tokens',
-#                'schedule': oai.settings.resumption_token_validity,
+#                'schedule': oai.settings.RESUMPTION_TOKEN_VALIDITY,
 #                'args': ()},
 #    }
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
