@@ -6,6 +6,7 @@ from celery.utils.log import get_task_logger
 from celery import current_task, task
 
 from lxml import etree
+from urllib2 import URLError, HTTPError
 
 from django.utils.timezone import now, make_aware, make_naive, UTC
 from django.db import IntegrityError, transaction
@@ -14,7 +15,7 @@ from datetime import timedelta
 from oaipmh.client import Client
 from oaipmh.metadata import MetadataRegistry, oai_dc_reader
 from oaipmh.datestamp import tolerant_datestamp_to_datetime
-from oaipmh.error import ErrorBase, DatestampError, NoRecordsMatchError
+from oaipmh.error import ErrorBase, DatestampError, NoRecordsMatchError, XMLSyntaxError
 
 from oai.models import *
 from oai.settings import *
@@ -34,8 +35,10 @@ def addSourceFromURL(url):
             source.save()
         except IntegrityError as e:
             return str(e)
-    except ErrorBase as e:
+    except (ErrorBase, URLError, HTTPError) as e:
         return unicode(e)
+    except XMLSyntaxError as e:
+        return 'XML syntax error: '+unicode(e)
         
 @task(serializer='json',bind=True)
 def fetch_from_source(self, pk):
