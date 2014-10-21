@@ -7,6 +7,8 @@ import unicodedata
 import HTMLParser
 import re
 
+from oai.models import OaiSource
+
 class VirtualSetExtractor:
     def format():
         """
@@ -14,9 +16,10 @@ class VirtualSetExtractor:
         the extractor works
         """
 
-    def getVirtualSets(xmlTree):
+    def getVirtualSets(xmlTree, source):
         """
         Returns the virtual sets for that particular metadata,
+        fetched from the given source,
         or None is an error occurred.
         """
 
@@ -24,6 +27,19 @@ class VirtualSetExtractor:
         """
         Returns the type of virtual sets extracted
         """
+
+class OAIDCSourceExtractor(VirtualSetExtractor):
+    @staticmethod
+    def format():
+        return 'oai_dc'
+
+    @staticmethod
+    def subset():
+        return 'source'
+
+    @staticmethod
+    def getVirtualSets(element, source):
+        return [source.prefix]
 
 
 class OAIDCAuthorExtractor(VirtualSetExtractor):
@@ -40,7 +56,7 @@ class OAIDCAuthorExtractor(VirtualSetExtractor):
     final_nontext_re = re.compile(r'[^a-z_]+$')
 
     @staticmethod
-    def getVirtualSets(element):
+    def getVirtualSets(element, source):
         namespaces = {
          'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
          'dc' : 'http://purl.org/dc/elements/1.1/'}
@@ -57,4 +73,6 @@ class OAIDCAuthorExtractor(VirtualSetExtractor):
             name = OAIDCAuthorExtractor.nontext_re.sub('-',name)
             result.append(name)
         return result
+
+REGISTERED_EXTRACTORS = [OAIDCAuthorExtractor, OAIDCSourceExtractor]
 

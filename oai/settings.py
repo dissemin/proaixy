@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 from __future__ import unicode_literals
 from datetime import timedelta
-from oai.virtual import *
+from proaixy.settings import *
 
 # Client settings
 query_time_range = timedelta(days=7) # range of initial OAI queries
@@ -20,7 +20,6 @@ metadata_format = 'oai_dc'
 own_set_prefix = 'proaixy'
 salt = 'change_me' # salt used to generate resumption tokens
 
-extractors = [OAIDCAuthorExtractor]
 
 # backend settings
 NB_RECORDS_BEFORE_COMMIT = 100 # size of the oai record batches between commits

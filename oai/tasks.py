@@ -19,6 +19,7 @@ from oaipmh.error import ErrorBase, DatestampError, NoRecordsMatchError, XMLSynt
 
 from oai.models import *
 from oai.settings import *
+from oai.virtual import *
 
 logger = get_task_logger(__name__)
 
@@ -148,9 +149,9 @@ def update_record(source, record, format):
         modelrecord.sets.add(modelset)
 
     # Apply virtual set extractors
-    for extractor in extractors:
+    for extractor in REGISTERED_EXTRACTORS:
         if extractor.format() == format.name:
-            sets = extractor.getVirtualSets(fullXML)
+            sets = extractor.getVirtualSets(fullXML, source)
             # print "Sets for "+identifier+": "+str(sets)
             for set in sets:
                 name = extractor.subset()+':'+set
