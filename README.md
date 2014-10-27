@@ -8,3 +8,11 @@ Using:
 * django
 * Celery
 * postgresql
+
+PIP dependencies:
+* django
+* django-celery
+* psycopg2
+
+
+
