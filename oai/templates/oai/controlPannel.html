@@ -32,7 +32,7 @@
         {% endfor %}
         <h3>Add a new source</h3>
         {% if errorMsg %}<p>Adding a new source failed:<br />{{ errorMsg }}</p>{% endif %}
-        <form action="/" method="post">
+        <form action="/~pintoch/proaixy/" method="post">
             {% csrf_token %}
             <table>
             {{ addSourceForm }}

@@ -27,6 +27,8 @@ from oai.forms import *
 def is_admin(user):
     return user.is_superuser
 
+PRODUCTION_ROOT_URL = "/~pintoch/proaixy/"
+
 @user_passes_test(is_admin)
 def controlPannel(request):
     context = { 'sources': OaiSource.objects.all(),
@@ -50,19 +52,19 @@ def controlPannel(request):
             source.harvester = fetch_from_source.delay(source.pk)
             source.status = 'records'
             source.save()
-            return HttpResponseRedirect('/')
+            return HttpResponseRedirect(PRODUCTION_ROOT_URL)
     elif 'set' in request.GET:
         source = get_object_or_404(OaiSource, pk=request.GET.get('set'))
         if not source.harvesting():
             source.harvester = fetch_sets_from_source.delay(source.pk)
             source.status = 'sets'
             source.save()
-            return HttpResponseRedirect('/')
+            return HttpResponseRedirect(PRODUCTION_ROOT_URL)
     elif 'revoke' in request.GET:
         id = request.GET.get('revoke')
         task = get_object_or_404(TaskMeta, task_id=id)
         revoke(id, terminate=True)
-        return HttpResponseRedirect('/')
+        return HttpResponseRedirect(PRODUCTION_ROOT_URL)
 
     return render(request, 'oai/controlPannel.html', context)
 
