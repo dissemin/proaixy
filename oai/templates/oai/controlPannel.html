@@ -9,15 +9,15 @@
         {% for source in sources %}
         <h3>{{ source.name }}</h3>
         <p>{{ source.records.count }} records
-        {% if not source.harvesting %}(<a href="/?harvest={{ source.id }}">Harvest</a>){% endif %},
+        {% if not source.harvesting %}(<a href="{% url 'controlPannel' %}?harvest={{ source.id }}">Harvest</a>){% endif %},
         {{ source.sets.count }} sets
-        {% if not source.harvesting %}(<a href="/?set={{ source.id }}">Update</a>){% endif %}.</p>
+        {% if not source.harvesting %}(<a href="{% url 'controlPannel' %}?set={{ source.id }}">Update</a>){% endif %}.</p>
         {% if source.harvesting %}
         <p>Harvesting {% if source.harvesterState == 'PROGRESS' %}
         {{ source.status }}.
         {% else %}
         {{ source.harvesterState }}
-        {% endif %} (<a href="/?revoke={{ source.harvester }}">Revoke</a>)
+        {% endif %} (<a href="{% url 'controlPannel' %}?revoke={{ source.harvester }}">Revoke</a>)
         {% else %}</p>
         <p>Last update: {{ source.last_update }}</p>
         {% if not source.harvesterState == 'DELETED' %}
@@ -32,7 +32,7 @@
         {% endfor %}
         <h3>Add a new source</h3>
         {% if errorMsg %}<p>Adding a new source failed:<br />{{ errorMsg }}</p>{% endif %}
-        <form action="/~pintoch/proaixy/" method="post">
+        <form action="{% url 'controlPannel' %}" method="post">
             {% csrf_token %}
             <table>
             {{ addSourceForm }}
