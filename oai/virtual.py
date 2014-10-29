@@ -52,6 +52,7 @@ class OAIDCAuthorExtractor(VirtualSetExtractor):
         return 'author'
 
     separator_re = re.compile(r',+ *')
+    escaping_chars_re = re.compile(r'[\{\}\\]')
     nontext_re = re.compile(r'[^a-z_]+')
     final_nontext_re = re.compile(r'[^a-z_]+$')
 
@@ -69,6 +70,7 @@ class OAIDCAuthorExtractor(VirtualSetExtractor):
             name = unicodedata.normalize('NFKD',name).encode('ASCII', 'ignore').lower()
             name = name.strip()
             name = OAIDCAuthorExtractor.separator_re.sub('_',name)
+            name = OAIDCAuthorExtractor.escaping_chars_re.sub('',name)
             name = OAIDCAuthorExtractor.final_nontext_re.sub('',name)
             name = OAIDCAuthorExtractor.nontext_re.sub('-',name)
             result.append(name)
