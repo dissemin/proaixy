@@ -92,8 +92,15 @@ def fetch_from_source(self, pk):
     while start_date <= current_date:
         source.status = baseStatus+' between '+str(start_date)+' and '+str(until_date)
         source.save()
+
+        real_until_date = until_date
+        if source.day_granularity and until_date < (current_date - timedelta(days=1)):
+            real_until_date -= timedelta(days=1)
         try:
-            listRecords = client.listRecords(metadataPrefix=format.name, from_=start_date, until=until_date)
+            listRecords = client.listRecords(
+                    metadataPrefix=format.name,
+                    from_=start_date,
+                    until=real_until_date)
         except NoRecordsMatchError:
             listRecords = []
 
@@ -103,9 +110,6 @@ def fetch_from_source(self, pk):
         source.save()
         until_date += time_chunk
         start_date += time_chunk
-        #except Exception as e:
-    #    error = OaiError(source=source, text=unicode(e))
-    #    error.save()
 
 @task(serializer='json',bind=True)
 def fetch_sets_from_source(self, pk):
