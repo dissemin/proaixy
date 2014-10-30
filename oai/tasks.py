@@ -16,7 +16,7 @@ from time import sleep
 from oaipmh.client import Client
 from oaipmh.metadata import MetadataRegistry, oai_dc_reader
 from oaipmh.datestamp import tolerant_datestamp_to_datetime
-from oaipmh.error import ErrorBase, DatestampError, NoRecordsMatchError, XMLSyntaxError
+from oaipmh.error import ErrorBase, BadVerbError, DatestampError, NoRecordsMatchError, XMLSyntaxError
 
 from oai.models import *
 from oai.settings import *
