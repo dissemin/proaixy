@@ -4,5 +4,6 @@
 .*.swp
 # Data
 db.sqlite3
+www/
 # Celery stuff
 celerybeat-schedule
