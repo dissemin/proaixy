@@ -16,7 +16,7 @@ from time import sleep
 from oaipmh.client import Client
 from oaipmh.metadata import MetadataRegistry, oai_dc_reader
 from oaipmh.datestamp import tolerant_datestamp_to_datetime
-from oaipmh.error import ErrorBase, DatestampError, NoRecordsMatchError, XMLSyntaxError
+from oaipmh.error import ErrorBase, BadVerbError, DatestampError, NoRecordsMatchError, XMLSyntaxError
 
 from oai.models import *
 from oai.settings import *
@@ -24,20 +24,28 @@ from oai.virtual import *
 
 logger = get_task_logger(__name__)
 
-def addSourceFromURL(url, prefix):
+def addSourceFromURL(url, prefix, get_method=False):
     try:
         registry = MetadataRegistry()
         client = Client(url, registry)
+        client.get_method = get_method
         identify = client.identify()
         name = identify.repositoryName()
         last_update = make_aware(identify.earliestDatestamp(), UTC())
         day_granularity = (identify.granularity() == 'YYYY-MM-DD')
         try:
             source = OaiSource(url=url, name=name, prefix=prefix,
-                    last_update=last_update, day_granularity=day_granularity)
+                    last_update=last_update, day_granularity=day_granularity,
+                    get_method=get_method)
             source.save()
         except IntegrityError as e:
             return str(e)
+    except BadVerbError as e:
+        # It is likely that the source only supports GET parameters
+        if not get_method:
+            addSourceFromURL(url, prefix, True)
+        else:
+            return unicode(e)
     except (ErrorBase, URLError, HTTPError) as e:
         return unicode(e)
     except XMLSyntaxError as e:
@@ -81,6 +89,7 @@ def fetch_from_source(self, pk):
     registry.registerReader(format.name, oai_dc_reader)
     client = Client(source.url, registry)
     client._day_granularity = source.day_granularity
+    client.get_method = source.get_method
 
     # Limit queries to records in a time range of 7 days (by default)
     time_chunk = QUERY_TIME_RANGE
@@ -92,8 +101,15 @@ def fetch_from_source(self, pk):
     while start_date <= current_date:
         source.status = baseStatus+' between '+str(start_date)+' and '+str(until_date)
         source.save()
+
+        real_until_date = until_date
+        if source.day_granularity and until_date < (current_date - timedelta(days=1)):
+            real_until_date -= timedelta(days=1)
         try:
-            listRecords = client.listRecords(metadataPrefix=format.name, from_=start_date, until=until_date)
+            listRecords = client.listRecords(
+                    metadataPrefix=format.name,
+                    from_=start_date,
+                    until=real_until_date)
         except NoRecordsMatchError:
             listRecords = []
 
@@ -103,9 +119,6 @@ def fetch_from_source(self, pk):
         source.save()
         until_date += time_chunk
         start_date += time_chunk
-        #except Exception as e:
-    #    error = OaiError(source=source, text=unicode(e))
-    #    error.save()
 
 @task(serializer='json',bind=True)
 def fetch_sets_from_source(self, pk):
@@ -116,6 +129,7 @@ def fetch_sets_from_source(self, pk):
 
     registry = MetadataRegistry()
     client = Client(source.url, registry)
+    client.get_method = source.get_method
     
     listSets = client.listSets()
     for set in listSets:

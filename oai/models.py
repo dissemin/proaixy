@@ -17,6 +17,7 @@ class OaiSource(models.Model):
     prefix = models.CharField(max_length=100, unique=True) # The prefix used for the virtual sets
     last_update = models.DateTimeField() # Records with a modification date earlier than that are fetched
     day_granularity = models.BooleanField(default=True) # True if the endpoint does not store datetimes but only dates
+    get_method = models.BooleanField(default=False) # True if the endpoint only supports GET requests
 
     harvester = models.CharField(max_length=128, null=True, blank=True) # Task id of the harvester
     status = models.CharField(max_length=256, null=True, blank=True) # Status of the harvester
