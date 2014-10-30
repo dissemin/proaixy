@@ -43,6 +43,22 @@ def addSourceFromURL(url, prefix):
     except XMLSyntaxError as e:
         return 'XML syntax error: '+unicode(e)
         
+def saveRecordList(source, format, listRecords):
+    # Small hack to commit the database every NB_RECORDS_BEFORE_COMMIT
+    recordFound = True
+    while recordFound:
+        i = 0
+        recordFound = False
+        with transaction.atomic():
+            for record in listRecords:
+                recordFound = True
+                update_record(source, record, format)
+                sleep(SLEEP_TIME_BETWEEN_RECORDS)
+                i += 1
+                if i > NB_RECORDS_BEFORE_COMMIT:
+                    break
+
+
 @task(serializer='json',bind=True)
 def fetch_from_source(self, pk):
     self.update_state(state='PROGRESS')
@@ -72,19 +88,7 @@ def fetch_from_source(self, pk):
         except NoRecordsMatchError:
             listRecords = []
 
-        # Small hack to commit the database every NB_RECORDS_BEFORE_COMMIT
-        recordFound = True
-        while recordFound:
-            i = 0
-            recordFound = False
-            with transaction.atomic():
-                for record in listRecords:
-                    recordFound = True
-                    update_record(source, record, format)
-                    sleep(SLEEP_TIME_BETWEEN_RECORDS)
-                    i += 1
-                    if i > NB_RECORDS_BEFORE_COMMIT:
-                        break
+        saveRecordList(source, format, listRecords)
 
         source.last_update = make_aware(min(until_date, current_date), UTC())
         source.save()
