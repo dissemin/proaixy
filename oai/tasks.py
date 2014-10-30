@@ -80,6 +80,7 @@ def fetch_from_source(self, pk):
     registry.registerReader(format.name, oai_dc_reader)
     client = Client(source.url, registry)
     client._day_granularity = source.day_granularity
+    client.get_method = source.get_method
 
     # Limit queries to records in a time range of 7 days (by default)
     time_chunk = QUERY_TIME_RANGE
@@ -115,6 +116,7 @@ def fetch_sets_from_source(self, pk):
 
     registry = MetadataRegistry()
     client = Client(source.url, registry)
+    client.get_method = source.get_method
     
     listSets = client.listSets()
     for set in listSets:
