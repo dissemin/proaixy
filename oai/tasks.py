@@ -24,20 +24,28 @@ from oai.virtual import *
 
 logger = get_task_logger(__name__)
 
-def addSourceFromURL(url, prefix):
+def addSourceFromURL(url, prefix, get_method=False):
     try:
         registry = MetadataRegistry()
         client = Client(url, registry)
+        client.get_method = get_method
         identify = client.identify()
         name = identify.repositoryName()
         last_update = make_aware(identify.earliestDatestamp(), UTC())
         day_granularity = (identify.granularity() == 'YYYY-MM-DD')
         try:
             source = OaiSource(url=url, name=name, prefix=prefix,
-                    last_update=last_update, day_granularity=day_granularity)
+                    last_update=last_update, day_granularity=day_granularity,
+                    get_method=get_method)
             source.save()
         except IntegrityError as e:
             return str(e)
+    except BadVerbError as e:
+        # It is likely that the source only supports GET parameters
+        if not get_method:
+            addSourceFromURL(url, prefix, True)
+        else:
+            return unicode(e)
     except (ErrorBase, URLError, HTTPError) as e:
         return unicode(e)
     except XMLSyntaxError as e:
