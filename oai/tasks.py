@@ -150,6 +150,8 @@ def fetch_formats_from_source(self, pk):
 
 @transaction.atomic
 def update_record(source, record, format):
+    if not record[1]:
+        return
     fullXML = record[1].element()
     metadataStr = etree.tostring(fullXML, pretty_print=True)
     identifier = record[0].identifier()
