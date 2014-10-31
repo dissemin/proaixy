@@ -66,6 +66,8 @@ class OAIDCAuthorExtractor(VirtualSetExtractor):
         matches = xpath_ev.evaluate('oai_dc:dc/dc:creator/text()')
         result = []
         for v in matches:
+            if v.strip() == "":
+                continue
             name = unicode(html.fromstring(v).text)
             name = unicodedata.normalize('NFKD',name).encode('ASCII', 'ignore').lower()
             name = name.strip()
