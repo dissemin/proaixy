@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from django.template import RequestContext, loader
 from django.views import generic
+from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import user_passes_test
@@ -79,6 +80,7 @@ def formatError(errorCode, errorMessage, context, request):
     context['errorMessage'] = errorMessage
     return render(request, 'oai/error.xml', context, content_type='text/xml')
 
+@csrf_exempt
 def endpoint(request):
     verb = request.GET.get('verb')
     thisUrl = 'http://'+request.get_host()+request.get_full_path()
