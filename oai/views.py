@@ -82,16 +82,18 @@ def formatError(errorCode, errorMessage, context, request):
 
 @csrf_exempt
 def endpoint(request):
-    verb = request.GET.get('verb')
+    params = dict(request.POST.items() + request.GET.items())
+    verb = params.get('verb')
+
     thisUrl = 'http://'+request.get_host()+request.get_full_path()
     timestamp = datetime.utcnow()
     timestamp = timestamp.replace(microsecond=0)
     context = {'thisUrl':thisUrl,
                'timestamp': timestamp.isoformat()+'Z'}
+
     if not verb:
         return formatError('badVerb','No verb specified!', context, request)
 
-    params = request.GET
     context['params'] = to_kv_pairs(params)
 
     try:
