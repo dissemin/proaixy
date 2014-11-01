@@ -51,6 +51,15 @@ def addSourceFromURL(url, prefix, get_method=False):
     except XMLSyntaxError as e:
         return 'XML syntax error: '+unicode(e)
         
+
+def recoverWithToken(source, format, token):
+    registry = MetadataRegistry()
+    registry.registerReader(format.name, oai_dc_reader)
+    client = Client(source.url, registry)
+    client._day_granularity = source.day_granularity
+    listRecords = client.listRecords(metadataPrefix=format.name, resumptionToken=token)
+    saveRecordList(source, format, listRecords)
+
 def saveRecordList(source, format, listRecords):
     # Small hack to commit the database every NB_RECORDS_BEFORE_COMMIT
     recordFound = True
