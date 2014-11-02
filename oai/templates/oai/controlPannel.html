@@ -8,27 +8,30 @@
         <h1>Proaixy!</h1>
         {% for source in sources %}
         <h3>{{ source.name }}</h3>
+        {% with harvesterState=source.harvesterState harvesting=source.harvesting %}
         <p>{{ source.records.count }} records
-        {% if not source.harvesting %}(<a href="{% url 'controlPannel' %}?harvest={{ source.id }}">Harvest</a>){% endif %},
+        {% if not harvesting %}(<a href="{% url 'controlPannel' %}?harvest={{ source.id }}">Harvest</a>){% endif %},
         {{ source.sets.count }} sets
-        {% if not source.harvesting %}(<a href="{% url 'controlPannel' %}?set={{ source.id }}">Update</a>){% endif %}.</p>
-        {% if source.harvesting %}
-        <p>Harvesting {% if source.harvesterState == 'PROGRESS' %}
+        {% if not harvesting %}(<a href="{% url 'controlPannel' %}?set={{ source.id }}">Update</a>){% endif %}.</p>
+        {% if harvesting %}
+        <p>Harvesting {% if harvesterState == 'PROGRESS' %}
         {{ source.status }}.
         {% else %}
-        {{ source.harvesterState }}
+        {{ harvesterState }}
         {% endif %} (<a href="{% url 'controlPannel' %}?revoke={{ source.harvester }}">Revoke</a>)
         {% else %}</p>
         <p>Last update: {{ source.last_update }}</p>
-        {% if not source.harvesterState == 'DELETED' %}
-        <p>Harvested {{ source.status }}: {{ source.harvesterState }}</p>
+        {% if not harvesterState == 'DELETED' %}
+        <p>Harvested {{ source.status }}: {{ harvesterState }}</p>
         {% endif %}
-        {% if source.harvesterState == 'FAILURE' %}
+        {% if harvesterState == 'FAILURE' %}
         <pre>{{ source.harvesterTask.traceback }}</pre>
         {% endif %}
         {% endif %}
+        {% endwith %}
         {% empty %}
         <p>No OAI source registered.</p>
+
         {% endfor %}
         <h3>Add a new source</h3>
         {% if errorMsg %}<p>Adding a new source failed:<br />{{ errorMsg }}</p>{% endif %}
