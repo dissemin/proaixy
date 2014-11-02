@@ -32,7 +32,7 @@ PRODUCTION_ROOT_URL = "/~pintoch/proaixy/"
 
 @user_passes_test(is_admin)
 def controlPannel(request):
-    context = { 'sources': OaiSource.objects.all(),
+    context = { 'sources': OaiSource.objects.extra(order_by = ['name']),
             'records': OaiRecord.objects.all(),
             'formats': OaiRecord.objects.all(),
             'addSourceForm': AddSourceForm() }
