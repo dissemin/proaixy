@@ -32,18 +32,20 @@ I recommend installing the following dependencies in a virtualenv:
 * django-celery
 * psycopg2
 
- 1. Create a postgresql database and put the access details in `proaixy/settings.py`
- 2. Run `python manage.py syncdb`. You will be prompted to create an admin account on the interface.
- 3. Run `celery --app=proaixy.celery:app worker -B -l INFO`
- 4. In parallel, run `python manage.py runserver`
 
-You can access the interface at http://localhost:8000/
-The OAI endpoint can be found at http://localhost:8000/oai
+1. Create a postgresql database and put the access details in `proaixy/settings.py`
+2. Run `python manage.py syncdb`. You will be prompted to create an admin account on the interface.
+3. Run `celery --app=proaixy.celery:app worker -B -l INFO`
+4. In parallel, run `python manage.py runserver`
+
+You can access the interface at [http://localhost:8000/](http://localhost:8000/)
+
+The OAI endpoint can be found at [http://localhost:8000/oai](http://localhost:8000/oai)
 
 Configuration
 -------------
 
-Log in to http://localhost:8000/. You will find a form to add a new OAI-PMH source.
+Log in to [http://localhost:8000/](http://localhost:8000/). You will find a form to add a new OAI-PMH source.
 Two fields are required:
 * The URL of the endpoint
 * A short identifier for the source, preferably without spaces and special characters (something
@@ -51,7 +53,8 @@ Two fields are required:
 Proaixy will query the endpoint to get more details about it, using the `Identify` verb.
 
 Once it is added, you can harvest it by clicking the appropriate link.
-
+Harvesting can be stopped by "revoking" the appropriate task. Only the current batch of records will 
+have to be downloaded again in a later harvest.
 
 
 
