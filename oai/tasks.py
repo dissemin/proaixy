@@ -176,6 +176,8 @@ def update_record(source, record, format):
             sets = extractor.getVirtualSets(fullXML, source)
             # print "Sets for "+identifier+": "+str(sets)
             for set in sets:
+                if not set:
+                    continue
                 name = extractor.subset()+':'+set
                 modelset, created = OaiSet.objects.get_or_create(name=name)
                 modelrecord.sets.add(modelset)
