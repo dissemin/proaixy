@@ -56,6 +56,25 @@ ROOT_URLCONF = 'proaixy.urls'
 
 WSGI_APPLICATION = 'proaixy.wsgi.application'
 
+# Logging
+
+LOGGING = {
+        'version': 1,
+        'handlers': {
+            'file': {
+                'level': 'DEBUG',
+                'class': 'logging.FileHandler',
+                'filename': '/home/pintoch/proaixy/logs/django-debug.log',
+                },
+           },
+        'loggers': {
+            'django.request': {
+                'handlers':['file'],
+                'level':'DEBUG',
+                'propagate': True,
+                },
+            },
+        }
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
