@@ -13,8 +13,7 @@ from django.db import IntegrityError, transaction
 from datetime import timedelta
 from time import sleep
 
-from oaipmh.client import Client
-from oaipmh.metadata import MetadataRegistry, oai_dc_reader
+from oaipmh.metadata import oai_dc_reader
 from oaipmh.datestamp import tolerant_datestamp_to_datetime
 from oaipmh.error import ErrorBase, BadVerbError, DatestampError, NoRecordsMatchError, XMLSyntaxError
 
@@ -53,10 +52,8 @@ def addSourceFromURL(url, prefix, get_method=False):
         
 
 def recoverWithToken(source, format, token):
-    registry = MetadataRegistry()
-    registry.registerReader(format.name, oai_dc_reader)
-    client = Client(source.url, registry)
-    client._day_granularity = source.day_granularity
+    client = source.getClient()
+    client._metadata_registry.registerReader(format.name, oai_dc_reader)
     listRecords = client.listRecords(metadataPrefix=format.name, resumptionToken=token)
     saveRecordList(source, format, listRecords)
 
@@ -85,11 +82,8 @@ def fetch_from_source(self, pk):
 
     # Set up the OAI fetcher
     format, created = OaiFormat.objects.get_or_create(name=METADATA_FORMAT) # defined in oai.settings
-    registry = MetadataRegistry()
-    registry.registerReader(format.name, oai_dc_reader)
-    client = Client(source.url, registry)
-    client._day_granularity = source.day_granularity
-    client.get_method = source.get_method
+    client = source.getClient()
+    source._metadata_registry.registerReader(format.name, oai_dc_reader)
 
     # Limit queries to records in a time range of 7 days (by default)
     time_chunk = QUERY_TIME_RANGE
@@ -127,9 +121,7 @@ def fetch_sets_from_source(self, pk):
     source = OaiSource.objects.get(pk=pk)
     baseStatus = 'sets'
 
-    registry = MetadataRegistry()
-    client = Client(source.url, registry)
-    client.get_method = source.get_method
+    client = source.getClient()
     
     listSets = client.listSets()
     for set in listSets:
@@ -147,8 +139,7 @@ def fetch_formats_from_source(self, pk):
     source.status = baseStatus
     source.save()
 
-    registry = MetadataRegistry()
-    client = Client(source.url, registry)
+    client = source.getClient()
     
     listFormats = client.listMetadataFormats()
     for format in listFormats:

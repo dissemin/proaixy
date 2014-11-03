@@ -7,8 +7,12 @@ from djcelery.models import TaskMeta, PeriodicTask, TaskState
 
 import hashlib
 
+from oaipmh.client import Client
+from oaipmh.metadata import MetadataRegistry
+
 from oai.utils import nstr, ndt
 from oai.settings import OWN_SET_PREFIX, RESUMPTION_TOKEN_SALT
+
 
 # An OAI data provider
 class OaiSource(models.Model):
@@ -24,6 +28,12 @@ class OaiSource(models.Model):
     last_change = models.DateTimeField(auto_now=True) # Last change made to this model
     def __unicode__(self):
         return self.name
+    def getClient(self):
+        registry = MetadataRegistry()
+        client = Client(self.url, registry)
+        client.get_method = self.get_method
+        client._day_granularity = self.day_granularity
+        return client
     def sets(self):
         return OaiSet.objects.filter(source=self.pk)
     def records(self):
