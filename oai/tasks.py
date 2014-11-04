@@ -64,13 +64,16 @@ def saveRecordList(source, format, listRecords):
         i = 0
         recordFound = False
         with transaction.atomic():
-            for record in listRecords:
-                recordFound = True
-                update_record(source, record, format)
-                sleep(SLEEP_TIME_BETWEEN_RECORDS)
-                i += 1
-                if i > NB_RECORDS_BEFORE_COMMIT:
-                    break
+            try:
+                for record in listRecords:
+                    recordFound = True
+                    update_record(source, record, format)
+                    sleep(SLEEP_TIME_BETWEEN_RECORDS)
+                    i += 1
+                    if i > NB_RECORDS_BEFORE_COMMIT:
+                        break
+            except NoRecordsMatchError:
+                recordFound = False
 
 
 @task(serializer='json',bind=True)
@@ -83,7 +86,7 @@ def fetch_from_source(self, pk):
     # Set up the OAI fetcher
     format, created = OaiFormat.objects.get_or_create(name=METADATA_FORMAT) # defined in oai.settings
     client = source.getClient()
-    source._metadata_registry.registerReader(format.name, oai_dc_reader)
+    client._metadata_registry.registerReader(format.name, oai_dc_reader)
 
     # Limit queries to records in a time range of 7 days (by default)
     time_chunk = QUERY_TIME_RANGE
