@@ -16,16 +16,27 @@ from oai.settings import OWN_SET_PREFIX, RESUMPTION_TOKEN_SALT
 
 # An OAI data provider
 class OaiSource(models.Model):
-    url = models.URLField(max_length=256, unique=True) # The URL of the OAI endpoint
-    name = models.CharField(max_length=100, unique=True) # The name of the repository as exposed by Identify
-    prefix = models.CharField(max_length=100, unique=True) # The prefix used for the virtual sets
-    last_update = models.DateTimeField() # Records with a modification date earlier than that are fetched
-    day_granularity = models.BooleanField(default=True) # True if the endpoint does not store datetimes but only dates
-    get_method = models.BooleanField(default=False) # True if the endpoint only supports GET requests
+    # The URL of the OAI endpoint
+    url = models.URLField(max_length=256, unique=True) 
+    # The name of the repository as exposed by Identify
+    name = models.CharField(max_length=100, unique=True)
+    # The prefix used for the virtual sets
+    prefix = models.CharField(max_length=100, unique=True)
+    # The optional set restrincting the records to harvest
+    restrict_set = models.CharField(max_length=512, null=True, blank=True)
+    # Records with a modification date earlier than that are already fetched
+    last_update = models.DateTimeField() 
+    # True if the endpoint does not store datetimes but only dates
+    day_granularity = models.BooleanField(default=True) 
+    # True if the endpoint only supports GET requests
+    get_method = models.BooleanField(default=False) 
 
-    harvester = models.CharField(max_length=128, null=True, blank=True) # Task id of the harvester
-    status = models.CharField(max_length=256, null=True, blank=True) # Status of the harvester
-    last_change = models.DateTimeField(auto_now=True) # Last change made to this model
+    # Task id of the harvester
+    harvester = models.CharField(max_length=128, null=True, blank=True)
+    # Status of the harvester
+    status = models.CharField(max_length=256, null=True, blank=True) 
+    # Last change made to this model
+    last_change = models.DateTimeField(auto_now=True) 
     def __unicode__(self):
         return self.name
     def getClient(self):

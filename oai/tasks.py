@@ -95,6 +95,11 @@ def fetch_from_source(self, pk):
     current_date = make_naive(now(), UTC())
     until_date = start_date + time_chunk
 
+    # Restrict to a set ?
+    restrict_set = source.restrict_set
+    if not restrict_set:
+        restrict_set = None
+
     while start_date <= current_date:
         source.status = baseStatus+' between '+str(start_date)+' and '+str(until_date)
         source.save()
@@ -103,10 +108,17 @@ def fetch_from_source(self, pk):
         if source.day_granularity and until_date < (current_date - timedelta(days=1)):
             real_until_date -= timedelta(days=1)
         try:
-            listRecords = client.listRecords(
-                    metadataPrefix=format.name,
-                    from_=start_date,
-                    until=real_until_date)
+            if restrict_set:
+                listRecords = client.listRecords(
+                        metadataPrefix=format.name,
+                        from_=start_date,
+                        until=real_until_date,
+                        set=restrict_set)
+            else:
+                listRecords = client.listRecords(
+                        metadataPrefix=format.name,
+                        from_=start_date,
+                        until=real_until_date)
         except NoRecordsMatchError:
             listRecords = []
 
