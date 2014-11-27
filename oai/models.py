@@ -73,8 +73,8 @@ class OaiError(models.Model):
 # An OAI set. If it is not associated with a source, it means that it is introduced by us
 class OaiSet(models.Model):
     source = models.ForeignKey(OaiSource, null=True, blank=True)
-    name = models.CharField(max_length=512, db_index=True)
-    fullname = models.CharField(max_length=512, null=True, blank=True)
+    name = models.CharField(max_length=2048, db_index=True)
+    fullname = models.CharField(max_length=2048, null=True, blank=True)
 
     unique_together = ('name','source')
 
