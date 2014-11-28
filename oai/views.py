@@ -122,8 +122,8 @@ def identify(request, context):
     return render(request, 'oai/identify.xml', context, content_type='text/xml')
 
 def getRecord(request, context):
-    getpost = dict(request.GET)
-    getpost.update(dict(request.POST))
+    getpost = request.GET.dict()
+    getpost.update(request.POST.dict())
     format_name = getpost.get('metadataPrefix')
     try:
         format = OaiFormat.objects.get(name=format_name)
@@ -138,10 +138,10 @@ def getRecord(request, context):
     return render(request, 'oai/GetRecord.xml', context, content_type='text/xml')
 
 def listSomething(request, context, verb):
-    getpost = dict(request.GET)
-    getpost.update(dict(request.POST))
-    if 'resumptionToken' in parameters:
-        return resumeRequest(context, request, verb, getpost['resumptionToken'])
+    getpost = request.GET.dict()
+    getpost.update(request.POST.dict())
+    if 'resumptionToken' in getpost:
+        return resumeRequest(context, request, verb, getpost.get('resumptionToken'))
     queryParameters = dict()
     error = None
     if verb == 'ListRecords' or verb == 'ListIdentifiers':
@@ -149,8 +149,8 @@ def listSomething(request, context, verb):
     return handleListQuery(request, context, verb, queryParameters)
 
 def listMetadataFormats(request, context):
-    getpost = dict(request.GET)
-    getpost.update(dict(request.POST))
+    getpost = request.GET.dict()
+    getpost.update(request.POST.dict())
     queryParameters = dict()
     matches = OaiFormat.objects.all()
     if 'identifier' in getpost:
