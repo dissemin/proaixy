@@ -122,12 +122,14 @@ def identify(request, context):
     return render(request, 'oai/identify.xml', context, content_type='text/xml')
 
 def getRecord(request, context):
-    format_name = request.GET.get('metadataPrefix')
+    getpost = dict(request.GET)
+    getpost.update(dict(request.POST))
+    format_name = getpost.get('metadataPrefix')
     try:
         format = OaiFormat.objects.get(name=format_name)
     except ObjectDoesNotExist:
         raise OaiRequestError('badArgument', 'The metadata format "'+format_name+'" does not exist.')
-    record_id = request.GET.get('identifier')
+    record_id = getpost.get('identifier')
     try:
         record = OaiRecord.objects.get(identifier=record_id)
     except ObjectDoesNotExist:
@@ -136,8 +138,10 @@ def getRecord(request, context):
     return render(request, 'oai/GetRecord.xml', context, content_type='text/xml')
 
 def listSomething(request, context, verb):
-    if 'resumptionToken' in request.GET:
-        return resumeRequest(context, request, verb, request.GET.get('resumptionToken'))
+    getpost = dict(request.GET)
+    getpost.update(dict(request.POST))
+    if 'resumptionToken' in parameters:
+        return resumeRequest(context, request, verb, getpost['resumptionToken'])
     queryParameters = dict()
     error = None
     if verb == 'ListRecords' or verb == 'ListIdentifiers':
@@ -145,10 +149,12 @@ def listSomething(request, context, verb):
     return handleListQuery(request, context, verb, queryParameters)
 
 def listMetadataFormats(request, context):
+    getpost = dict(request.GET)
+    getpost.update(dict(request.POST))
     queryParameters = dict()
     matches = OaiFormat.objects.all()
-    if 'identifier' in request.GET:
-        id = request.GET.get('identifier')
+    if 'identifier' in getpost:
+        id = getpost.get('identifier')
         records = OaiRecord.objects.filter(identifier=id)
         if records.count() == 0:
             raise OaiRequestError('badArgument', 'This identifier "'+id+'" does not exist.')
