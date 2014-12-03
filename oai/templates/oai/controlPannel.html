@@ -10,7 +10,7 @@
         {% for source in sources %}
         <h3>{{ source.name }}</h3>
         {% with harvesterState=source.harvesterState harvesting=source.harvesting %}
-        <p>{{ source.records.count }} records
+        <p><a href="{% url 'countRecords' source.id %}">See number of records</a>
         {% if not harvesting %}(<a href="{% url 'controlPannel' %}?harvest={{ source.id }}">Harvest</a>){% endif %},
         {{ source.sets.count }} sets
         {% if not harvesting %}(<a href="{% url 'controlPannel' %}?set={{ source.id }}">Update</a>){% endif %}.</p>

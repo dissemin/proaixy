@@ -70,6 +70,11 @@ def controlPannel(request):
     return render(request, 'oai/controlPannel.html', context)
 
 @user_passes_test(is_admin)
+def countRecords(request, pk):
+    source = get_object_or_404(OaiSource, pk=pk)
+    return render(request, 'oai/countRecords.html', {'source':source})
+
+@user_passes_test(is_admin)
 def updateFormats(request, pk):
     source = get_object_or_404(OaiSource, pk=pk)
     fetch_formats_from_source.apply_async(eta=timezone.now(), kwargs={'pk':pk})
