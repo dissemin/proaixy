@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django.db.models import F
 from django.core.exceptions import ObjectDoesNotExist
 from djcelery.models import TaskMeta, PeriodicTask, TaskState
 
@@ -35,6 +36,8 @@ class OaiSource(models.Model):
     harvester = models.CharField(max_length=128, null=True, blank=True)
     # Status of the harvester
     status = models.CharField(max_length=256, null=True, blank=True) 
+    # Cached number of records belonging to this source
+    nb_records = models.IntegerField(default=0)
     # Last change made to this model
     last_change = models.DateTimeField(auto_now=True) 
     def __unicode__(self):
@@ -61,6 +64,21 @@ class OaiSource(models.Model):
         if task:
             return task.status
         return 'DELETED'
+    def syncNbRecords(self):
+        """
+        Synchronize the cached number of records.
+        This number is supposed to be updated when records
+        are created and deleted, but it might go out of sync sometimes.
+        """
+        OaiSource.objects.filter(pk=self.pk).update(nb_records=OaiRecord.objects.filter(source=self.pk).count())
+    def incrementNbRecords(self):
+        """
+        Atomically increment the cached number of records
+        """
+        OaiSource.objects.filter(pk=self.pk).update(nb_records=F('nb_records')+1)
+    def decrementNbRecords(self):
+        OaiSource.objects.filter(pk=self.pk).update(nb_records=F('nb_records')-1)
+
 
 # An error encountered while harvesting an OAI data provider
 class OaiError(models.Model):
