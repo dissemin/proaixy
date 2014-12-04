@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpResponseRedirect
+from django.db.models import Sum
 
 from oaipmh.datestamp import tolerant_datestamp_to_datetime
 from oaipmh.error import DatestampError
@@ -33,8 +34,8 @@ PRODUCTION_ROOT_URL = "/~pintoch/proaixy/"
 @user_passes_test(is_admin)
 def controlPannel(request):
     context = { 'sources': OaiSource.objects.extra(order_by = ['name']),
+            'nbRecords': OaiRecord.objects.all().aggregate(Sum('nb_records')),
             'records': OaiRecord.objects.all(),
-            'formats': OaiRecord.objects.all(),
             'addSourceForm': AddSourceForm() }
 
     if request.method == 'POST':
