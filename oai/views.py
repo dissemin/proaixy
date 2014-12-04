@@ -34,7 +34,7 @@ PRODUCTION_ROOT_URL = "/~pintoch/proaixy/"
 @user_passes_test(is_admin)
 def controlPannel(request):
     context = { 'sources': OaiSource.objects.extra(order_by = ['name']),
-            'nbRecords': OaiRecord.objects.all().aggregate(Sum('nb_records')),
+            'nbRecords': OaiSource.objects.all().aggregate(Sum('nb_records'))['nb_records__sum'],
             'records': OaiRecord.objects.all(),
             'addSourceForm': AddSourceForm() }
 
