@@ -13,7 +13,7 @@ from datetime import datetime
 
 from oai.tasks import *
 from oai.models import *
-from oai.utils import to_kv_pairs
+from oai.utils import to_kv_pairs, OaiRequestError
 from oai.settings import *
 
 def handleListQuery(request, context, queryType, parameters, offset=0):
@@ -23,7 +23,7 @@ def handleListQuery(request, context, queryType, parameters, offset=0):
     elif queryType == 'ListSets':
         matches = OaiSet.objects.all()
     else:
-        return formatError('badArgument', 'Illegal verb.')
+        raise OaiRequestError('badArgument', 'Illegal verb.')
     count = matches.count()
     # Should we create a resumption token?
     if count-offset > RESULTS_LIMIT:
@@ -49,17 +49,18 @@ def createResumptionToken(queryType, queryParameters, offset, totalCount):
     return token
 
 def resumeRequest(context, request, queryType, key):
-    token = ResumptionToken.objects.get(queryType=queryType, key=key)
-    if not token:
-        return formatError('badResumptionToken', 'This resumption token is invalid.', context, request)
+    try:
+        token = ResumptionToken.objects.get(queryType=queryType, key=key)
+    except ObjectDoesNotExist:
+        raise OaiRequestError('badResumptionToken', 'This resumption token is invalid: "'+key+'", "'+queryType+'"', context, request)
     parameters = dict()
     parameters['format'] = token.metadataPrefix
     if token.set:
         parameters['sets'] = token.set
     if token.fro:
-        parameters['timestamp__gte'] = make_naive(token.fro, UTC())
+        parameters['timestamp__gte'] = token.fro
     if token.until:
-        parameters['timestamp__lte'] = make_naive(token.until, UTC())
+        parameters['timestamp__lte'] = token.until
     return handleListQuery(request, context, queryType, parameters, token.offset)
     
 
