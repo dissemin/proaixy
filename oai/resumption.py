@@ -17,14 +17,13 @@ from oai.utils import to_kv_pairs, OaiRequestError
 from oai.settings import *
 
 def handleListQuery(request, context, queryType, parameters, offset=0):
-    # TODO use offset
     if queryType == 'ListRecords' or queryType == 'ListIdentifiers':
         matches = OaiRecord.objects.filter(**parameters)
     elif queryType == 'ListSets':
         matches = OaiSet.objects.all()
     else:
         raise OaiRequestError('badArgument', 'Illegal verb.')
-    count = matches.count()
+    count = matches[offset:(offset+RESULTS_LIMIT+1)].count()
     # Should we create a resumption token?
     if count-offset > RESULTS_LIMIT:
         token = createResumptionToken(queryType, parameters, offset+RESULTS_LIMIT, count)
