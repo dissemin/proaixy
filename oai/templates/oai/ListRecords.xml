@@ -2,7 +2,7 @@
 {% load iso %}
 {% block mainContent %}
 {% if matches %}
-<ListRecords>{% for record in matches.all %}
+<ListRecords>{% for record in matches %}
 <record>
     <header>
         <identifier>{{ record.identifier }}</identifier>

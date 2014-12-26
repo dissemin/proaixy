@@ -23,12 +23,13 @@ def handleListQuery(request, context, queryType, parameters, offset=0):
         matches = OaiSet.objects.all()
     else:
         raise OaiRequestError('badArgument', 'Illegal verb.')
-    count = matches[offset:(offset+RESULTS_LIMIT+1)].count()
+    matches = list(matches[offset:(offset+RESULTS_LIMIT+1)])
+    count = len(matches)
     # Should we create a resumption token?
-    if count-offset > RESULTS_LIMIT:
+    if count > RESULTS_LIMIT:
         token = createResumptionToken(queryType, parameters, offset+RESULTS_LIMIT, count)
         context['token'] = token
-    context['matches'] = matches[offset:(offset+RESULTS_LIMIT)]
+    context['matches'] = matches
     return render(request, 'oai/'+queryType+'.xml', context, content_type='text/xml')
 
 

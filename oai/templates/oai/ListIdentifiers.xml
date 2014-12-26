@@ -2,7 +2,7 @@
 {% load iso %}
 {% block mainContent %}
 {% if matches %}
-<ListIdentifiers>{% for record in matches.all %}
+<ListIdentifiers>{% for record in matches %}
 <header>
     <identifier>{{ record.identifier }}</identifier>
     <datestamp>{{ record.timestamp | isoformat }}</datestamp>{% for setspec in record.sets.all %}
