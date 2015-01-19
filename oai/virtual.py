@@ -3,7 +3,8 @@ from __future__ import unicode_literals
 
 from lxml import etree
 from lxml import html
-import unicodedata
+from unidecode import unidecode
+import name_tools
 import HTMLParser
 import re
 
@@ -78,5 +79,46 @@ class OAIDCAuthorExtractor(VirtualSetExtractor):
             result.append(name)
         return result
 
-REGISTERED_EXTRACTORS = [OAIDCAuthorExtractor, OAIDCSourceExtractor]
+class OAIDCLastnameExtractor(VirtualSetExtractor):
+    @staticmethod
+    def format():
+        return 'oai_dc'
+
+    @staticmethod
+    def subset():
+        return 'lastname'
+
+    separator_re = re.compile(r',+ *')
+    escaping_chars_re = re.compile(r'[\{\}\\]')
+    nontext_re = re.compile(r'[^a-z_]+')
+    final_nontext_re = re.compile(r'[^a-z_]+$')
+
+    @staticmethod
+    def getVirtualSets(element, source):
+        namespaces = {
+         'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
+         'dc' : 'http://purl.org/dc/elements/1.1/'}
+
+        xpath_ev = etree.XPathEvaluator(element, namespaces=namespaces)
+        matches = xpath_ev.evaluate('oai_dc:dc/dc:creator/text()')
+        result = []
+        for v in matches:
+            if v.strip() == "":
+                continue
+            name = unicode(html.fromstring(v).text)
+            name = unidecode(name)
+            pre, first, last, post = name_tools.split(name)
+            name = last.lower().strip()
+            name = OAIDCAuthorExtractor.escaping_chars_re.sub('',name)
+            name = OAIDCAuthorExtractor.final_nontext_re.sub('',name)
+            name = OAIDCAuthorExtractor.nontext_re.sub('-',name)
+            result.append(name)
+        return result
+
+
+REGISTERED_EXTRACTORS = [
+        OAIDCLastnameExtractor,
+        OAIDCAuthorExtractor,
+        OAIDCSourceExtractor,
+        ]
 
