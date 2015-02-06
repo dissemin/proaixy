@@ -198,6 +198,26 @@ def update_record(source, record, format):
                 modelrecord.sets.add(modelset)
             sets = None
 
+def rerun_extractor(modelrecord, extractor, deletePrevious=True):
+    """
+    Reruns an extractor on an existing OaiRecord
+    deletePrevious indicates the previous virtual sets created by this extractor
+    should be deleted.
+    """
+    format = modelrecord.format.name
+    if format != extractor.format():
+        raise ValueError('The metadata formats do not match!')
+    fullXML = etree.fromstring(modelrecord.metadata)
+    
+    if deletePrevious:
+        modelrecord.sets.filter(name__startswith=extractor.subset()+':').clear()
+    sets = extractor.getVirtualSets(fullXML, modelrecord.source)
+    for set in sets:
+        if not set:
+            continue
+        name = extractor.subset()+':'+set
+        modelset, created = OaiSet.objects.get_or_create(name=name)
+        modelrecord.sets.add(modelset)
 
 @shared_task
 def cleanup_resumption_tokens():
