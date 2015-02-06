@@ -70,7 +70,7 @@ class OAIDCAuthorExtractor(VirtualSetExtractor):
             if v.strip() == "":
                 continue
             name = unicode(html.fromstring(v).text)
-            name = unicodedata.normalize('NFKD',name).encode('ASCII', 'ignore').lower()
+            name = unidecode(name).lower()
             name = name.strip()
             name = OAIDCAuthorExtractor.separator_re.sub('_',name)
             name = OAIDCAuthorExtractor.escaping_chars_re.sub('',name)
