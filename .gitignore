@@ -1,9 +1,11 @@
 # python files
 *.pyc
+.virtualenv/
 # vim 
 .*.swp
 # Data
 db.sqlite3
 www/
+logs
 # Celery stuff
 celerybeat-schedule

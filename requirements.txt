@@ -1,0 +1,6 @@
+django
+celery
+django-celery
+psycopg2
+unidecode
+name_tools
