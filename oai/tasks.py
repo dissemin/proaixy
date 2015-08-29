@@ -77,8 +77,11 @@ def saveRecordList(source, format, listRecords):
 
 
 @task(serializer='json',bind=True)
-def fetch_from_source(self, pk):
-    self.update_state(state='PROGRESS')
+def fetch_from_source_task(self, pk):
+    fetch_from_source(pk)
+
+def fetch_from_source(pk):#self, pk):
+    #self.update_state(state='PROGRESS')
 
     source = OaiSource.objects.get(pk=pk)
     baseStatus = 'records'

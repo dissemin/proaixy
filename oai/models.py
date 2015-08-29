@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.db.models import F
+from django.utils.functional import cached_property
 from django.core.exceptions import ObjectDoesNotExist
 from djcelery.models import TaskMeta, PeriodicTask, TaskState
 
@@ -54,15 +55,15 @@ class OaiSource(models.Model):
         return OaiRecord.objects.filter(source=self.pk)
     def harvesting(self):
         return not (self.harvesterState() in ['SUCCESS', 'FAILURE', 'REVOKED', 'DELETED'])
-    def harvesterTask(self):
+    @cached_property
+    def task(self):
         try:
             return TaskMeta.objects.get(task_id=self.harvester)
         except ObjectDoesNotExist:
             pass
     def harvesterState(self):
-        task = self.harvesterTask()
-        if task:
-            return task.status
+        if self.task:
+            return self.task.status
         return 'DELETED'
     def syncNbRecords(self):
         """
@@ -167,12 +168,4 @@ class ResumptionToken(models.Model):
         self.save()
 
 
-    
-# A statement that some record belongs to some set.
-# class OaiSetSpec(models.Model):
-#    container = models.ForeignKey(OaiSet)
-#    record = models.ForeignKey(OaiRecord)
-#    unique_together
-#    def __unicode__(self):
-#        return record.identifier + " is " + unicode(self.container)
 

@@ -51,7 +51,7 @@ def controlPannel(request):
     elif 'harvest' in request.GET:
         source = get_object_or_404(OaiSource, pk=request.GET.get('harvest'))
         if not source.harvesting():
-            source.harvester = fetch_from_source.delay(source.pk)
+            source.harvester = fetch_from_source_task.delay(source.pk)
             source.status = 'records'
             source.save()
             return HttpResponseRedirect(PRODUCTION_ROOT_URL)

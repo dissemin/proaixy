@@ -11,9 +11,7 @@
         <h3>{{ source.name }}</h3>
         {% with harvesterState=source.harvesterState harvesting=source.harvesting %}
         <p>{{ source.nb_records }} records
-        {% if not harvesting %}(<a href="{% url 'controlPannel' %}?harvest={{ source.id }}">Harvest</a>){% endif %},
-        {{ source.sets.count }} sets
-        {% if not harvesting %}(<a href="{% url 'controlPannel' %}?set={{ source.id }}">Update</a>){% endif %}.</p>
+        {% if not harvesting %}(<a href="{% url 'controlPannel' %}?harvest={{ source.id }}">Harvest</a>) (<a href="{% url 'controlPannel' %}?set={{ source.id }}">Update sets</a>){% endif %}.</p>
         {% if harvesting %}
         <p>Harvesting {% if harvesterState == 'PROGRESS' %}
         {{ source.status }}.
