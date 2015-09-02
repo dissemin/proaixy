@@ -136,6 +136,10 @@ class OaiRecord(models.Model):
     format = models.ForeignKey(OaiFormat)
     # The unique ID of the metadata from the source
     identifier = models.CharField(max_length=128, unique=True)
+    # The fingerprint of this paper (title + sometimes year and/or authors last names)
+    fingerprint = models.CharField(max_length=64, db_index=True, null=True)
+    # The DOI of this paper (if provided)
+    doi = models.CharField(max_length=512, db_index=True, null=True, blank=True)
     # The sets it belongs to
     sets = models.ManyToManyField(OaiSet)
     # The metadata as an XML object

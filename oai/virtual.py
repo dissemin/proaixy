@@ -9,6 +9,70 @@ import HTMLParser
 import re
 
 from oai.models import OaiSource
+from oai.utils import tolerant_datestamp_to_datetime, create_paper_fingerprint, parse_comma_name
+from oai.name import *
+
+doi_re = re.compile(r'^ *(?:[Dd][Oo][Ii] *[:=])? *(?:http://dx\.doi\.org/)?(10\.[0-9]{4,}[^ ]*/[^ ]+) *$')
+
+def to_doi(candidate):
+    """ Convert a representation of a DOI to its normal form. """
+    m = doi_re.match(candidate)
+    if m:
+        return m.groups()[0]
+    else:
+        return None
+
+def extract_doi(element):
+    namespaces = {
+     'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
+     'dc' : 'http://purl.org/dc/elements/1.1/'}
+    xpath_ev = etree.XPathEvaluator(element, namespaces=namespaces)
+    matches = xpath_ev.evaluate('oai_dc:dc/dc:identifier/text()')
+    for v in matches:
+        doi = to_doi(v.strip())
+        if doi is not None:
+            return doi
+
+def compute_fingerprint(element):
+    namespaces = {
+     'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
+     'dc' : 'http://purl.org/dc/elements/1.1/'}
+
+    xpath_ev = etree.XPathEvaluator(element, namespaces=namespaces)
+
+    # Compute authors
+    authors = []
+    matches = xpath_ev.evaluate('oai_dc:dc/dc:creator/text()')
+    for v in matches:
+        if v.strip() == "":
+            continue
+        name = unicode(html.fromstring(v).text)
+        authors.append(parse_comma_name(name))
+    if not authors:
+        return
+
+    # Title
+    title = None
+    matches = xpath_ev.evaluate('oai_dc:dc/dc:title/text()')
+    for v in matches:
+        v = v.strip()
+        if not v:
+            continue
+        title = v
+        break
+
+    # Year
+    date = None
+    matches = xpath_ev.evaluate('oai_dc:dc/dc:date/text()')
+    for v in matches:
+        try:
+            parsed = tolerant_datestamp_to_datetime(v)
+            if date is None or parsed < date:
+                date = parsed
+        except ValueError:
+            continue
+
+    return create_paper_fingerprint(title, authors, date.year)
 
 class VirtualSetExtractor:
     def format():
@@ -113,6 +177,8 @@ class OAIDCLastnameExtractor(VirtualSetExtractor):
             name = OAIDCLastnameExtractor.nontext_re.sub('-',name)
             result.append(name)
         return result
+
+
 
 class OAIDCAuthorSigExtractor(VirtualSetExtractor):
     @staticmethod

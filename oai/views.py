@@ -190,10 +190,22 @@ def getListQuery(context, request):
     # set
     set = getParams.pop('set', None)
     if set:
-        matchingSet = OaiSet.byRepresentation(set)
-        if not matchingSet:
-            raise OaiRequestError('badArgument', 'The set "'+set+'" does not exist.')
-        queryParameters['sets'] = matchingSet
+        if set.startswith(FINGERPRINT_IDENTIFIER_PREFIX):
+            fingerprint = set[len(FINGERPRINT_IDENTIFIER_PREFIX):]
+            if not fingerprint:
+                raise OaiRequestError('badArgument', 'Invalid fingerprint.')
+            queryParameters['fingerprint'] = fingerprint
+        elif set.startswith(DOI_IDENTIFIER_PREFIX):
+            doi = set[len(DOI_IDENTIFIER_PREFIX):]
+            if not doi:
+                raise OaiRequestError('badArgument', 'Invalid DOI.')
+            queryParameters['doi'] = doi
+        else:
+            matchingSet = OaiSet.byRepresentation(set)
+            if not matchingSet:
+                raise OaiRequestError('badArgument', 'The set "'+set+'" does not exist.')
+            queryParameters['sets'] = matchingSet
+
     
     # from
     from_ = getParams.pop('from', None)

@@ -19,6 +19,8 @@ METADATA_FORMAT = 'oai_dc'
 OWN_SET_PREFIX = 'proaixy'
 RESUMPTION_TOKEN_SALT = 'change_me' # salt used to generate resumption tokens
 
+FINGERPRINT_IDENTIFIER_PREFIX = OWN_SET_PREFIX+':fingerprint:'
+DOI_IDENTIFIER_PREFIX = OWN_SET_PREFIX+':doi:'
 
 # backend settings
 NB_RECORDS_BEFORE_COMMIT = 20 # size of the oai record batches between commits

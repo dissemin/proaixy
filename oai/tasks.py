@@ -23,6 +23,17 @@ from oai.virtual import *
 
 logger = get_task_logger(__name__)
 
+def fill_extra_ids(record):
+    element = etree.fromstring(record.metadata)
+
+    doi = extract_doi(element)
+    fingerprint = compute_fingerprint(element)
+
+    if doi or fingerprint:
+        record.doi = doi
+        record.fingerprint = fingerprint
+        record.save(update_fields=['doi','fingerprint'])
+
 def addSourceFromURL(url, prefix, get_method=False):
     try:
         registry = MetadataRegistry()
@@ -176,8 +187,18 @@ def update_record(source, record, format):
     timestamp = record[0].datestamp()
     timestamp = make_aware(timestamp, UTC())
 
-    modelrecord, created = OaiRecord.objects.get_or_create(identifier=identifier, format=format,
-            defaults={'source':source, 'metadata':metadataStr, 'timestamp':timestamp})
+    fingerprint = compute_fingerprint(fullXML)
+    doi = extract_doi(fullXML)
+
+    modelrecord, created = OaiRecord.objects.get_or_create(
+            identifier=identifier,
+            format=format,
+            defaults={
+                'source':source,
+                'metadata':metadataStr,
+                'timestamp':timestamp,
+                'fingerprint':fingerprint,
+                'doi':doi})
     if not created:
         modelrecord.timestamp = timestamp
         modelrecord.metadata = metadataStr
