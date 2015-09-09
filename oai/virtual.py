@@ -72,7 +72,8 @@ def compute_fingerprint(element):
         except ValueError:
             continue
 
-    return create_paper_fingerprint(title, authors, date.year)
+    if date and title:
+        return create_paper_fingerprint(title, authors, date.year)
 
 class VirtualSetExtractor:
     def format():
