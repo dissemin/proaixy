@@ -6,8 +6,8 @@
 <record>
     <header>
         <identifier>{{ record.identifier }}</identifier>
-        <datestamp>{{ record.timestamp | isoformat }}</datestamp>{% for setspec in record.sets.all %}
-        <setSpec>{{ setspec }}</setSpec>{% endfor %}
+        <datestamp>{{ record.timestamp | isoformat }}</datestamp>{% for setspec in record.get_virtual_sets %}
+        <setSpec>proaixy:{{ setspec }}</setSpec>{% endfor %}
     </header>
     {% autoescape off %}{{ record.metadata }}{% endautoescape %}
 </record>{% endfor %}{% if token %}

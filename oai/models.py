@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
 from __future__ import unicode_literals
 
+from lxml import etree
+
 from django.db import models
 from django.db.models import F
 from django.utils.functional import cached_property
@@ -14,7 +16,6 @@ from oaipmh.metadata import MetadataRegistry
 
 from oai.utils import nstr, ndt
 from oai.settings import OWN_SET_PREFIX, RESUMPTION_TOKEN_SALT
-
 
 # An OAI data provider
 class OaiSource(models.Model):
@@ -127,6 +128,8 @@ class OaiFormat(models.Model):
     def __unicode__(self):
         return self.name
 
+from oai.virtual import REGISTERED_EXTRACTORS
+
 # A record from an OAI source
 class OaiRecord(models.Model):
     source = models.ForeignKey(OaiSource)
@@ -146,8 +149,23 @@ class OaiRecord(models.Model):
     metadata = models.TextField()
     # Last updated by us
     last_modified = models.DateTimeField(auto_now=True)
+
     def __unicode__(self):
         return self.identifier
+    def get_virtual_sets(self):
+        """
+        Returns the list of virtual sets for this extractor
+        """
+        fullXML = etree.fromstring(self.metadata)
+        for extractor in REGISTERED_EXTRACTORS:
+            if extractor.format() == self.format.name:
+                sets = extractor.getVirtualSets(fullXML, self.source)
+                # print "Sets for "+identifier+": "+str(sets)
+                for set in sets:
+                    if not set:
+                        continue
+                    name = extractor.subset()+':'+set
+                    yield name
 
 # A resumption token for the output interface
 class ResumptionToken(models.Model):
