@@ -4,3 +4,4 @@ django-celery
 psycopg2
 unidecode
 name_tools
+-e git://github.com/wetneb/pyoai.git#egg=pyoai

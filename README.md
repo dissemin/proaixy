@@ -25,13 +25,12 @@ earliest datestamp declared by the interface.
 Installation
 ------------
 
-I recommend installing the following dependencies in a virtualenv:
-* http://github.com/wetneb/pyoai
-* django
-* celery
-* django-celery
-* psycopg2
+You need the following dependencies (on Debian):
+postgresql-server-dev-9.4 python-dev build-essential libxml2-dev libxslt1-dev
 
+I recommend installing the following dependencies in a virtualenv:
+Python dependencies can be installed using `pip install -r requirements.txt`
+(you can do it in a virtualenv).
 
 1. Create a postgresql database and put the access details in `proaixy/settings.py`
 2. Run `python manage.py syncdb`. You will be prompted to create an admin account on the interface.
