@@ -1,7 +1,11 @@
 django
 celery
+kombu
+billiard
+pytz
 django-celery
 psycopg2
 unidecode
+unicode_tex
 name_tools
 -e git://github.com/wetneb/pyoai.git#egg=pyoai
