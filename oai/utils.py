@@ -160,11 +160,10 @@ def create_paper_plain_fingerprint(title, authors, year):
 
     # If the title is long enough, we return the fingerprint as is
     if len(buf) > 50:
-        print buf
         return buf
     
     # If the title is just one word, we add the year (for "Preface", "Introduction" cases)
-    if not '-' in title:
+    if len(title) < 16:
         buf += '-'+str(year)
 
     author_names_list = []
@@ -196,7 +195,6 @@ def create_paper_plain_fingerprint(title, authors, year):
     for fp in author_names_list:
         buf += '/'+fp
 
-    print buf
     return buf
 
 def create_paper_fingerprint(title, authors, year):
