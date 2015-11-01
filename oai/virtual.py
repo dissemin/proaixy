@@ -22,27 +22,50 @@ def to_doi(candidate):
     else:
         return None
 
-def extract_doi(element):
-    namespaces = {
+oai_dc_namespaces = {
      'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
      'dc' : 'http://purl.org/dc/elements/1.1/'}
+
+base_dc_namespaces = {
+    'base_dc': 'http://oai.base-search.net/base_dc/',
+    'dc': 'http://purl.org/dc/elements/1.1/'}
+
+def extract_doi(element, schema='oai_dc'):
+    if schema == 'oai_dc':
+        identifier_field = 'oai_dc:dc/dc:identifier/text()'
+        namespaces = oai_dc_namespaces
+    elif schema == 'base_dc':
+        identifier_field = 'base_dc:dc/dc:identifier/text()'
+        namespaces = base_dc_namespaces
+    else:
+        raise ValueError("Invalid schema")
+
     xpath_ev = etree.XPathEvaluator(element, namespaces=namespaces)
-    matches = xpath_ev.evaluate('oai_dc:dc/dc:identifier/text()')
+    matches = xpath_ev.evaluate(identifier_field)
     for v in matches:
         doi = to_doi(v.strip())
         if doi is not None:
             return doi
 
-def compute_fingerprint(element):
-    namespaces = {
-     'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
-     'dc' : 'http://purl.org/dc/elements/1.1/'}
+def compute_fingerprint(element, schema='oai_dc'):
+    if schema == 'oai_dc':
+        author_field = 'oai_dc:dc/dc:creator/text()'
+        title_field = 'oai_dc:dc/dc:title/text()'
+        date_field = 'oai_dc:dc/dc:date/text()'
+        namespaces = oai_dc_namespaces
+    elif schema == 'base_dc':
+        author_field = 'base_dc:dc/dc:creator/text()'
+        title_field = 'base_dc:dc/dc:title/text()'
+        date_field = 'base_dc:dc/base_dc:year/text()'
+        namespaces = base_dc_namespaces
+    else:
+        raise ValueError("Invalid schema")
 
     xpath_ev = etree.XPathEvaluator(element, namespaces=namespaces)
 
     # Compute authors
     authors = []
-    matches = xpath_ev.evaluate('oai_dc:dc/dc:creator/text()')
+    matches = xpath_ev.evaluate(author_field)
     for v in matches:
         if v.strip() == "":
             continue
@@ -53,7 +76,7 @@ def compute_fingerprint(element):
 
     # Title
     title = None
-    matches = xpath_ev.evaluate('oai_dc:dc/dc:title/text()')
+    matches = xpath_ev.evaluate(title_field)
     for v in matches:
         v = v.strip()
         if not v:
@@ -63,7 +86,7 @@ def compute_fingerprint(element):
 
     # Year
     date = None
-    matches = xpath_ev.evaluate('oai_dc:dc/dc:date/text()')
+    matches = xpath_ev.evaluate(date_field)
     for v in matches:
         try:
             parsed = tolerant_datestamp_to_datetime(v)
