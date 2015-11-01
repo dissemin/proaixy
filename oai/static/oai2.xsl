@@ -5,6 +5,7 @@
   XSL Transform to convert OAI 2.0 responses into XHTML
 
   By Christopher Gutteridge, University of Southampton
+  base_dc adaptation by Antonin Delpeuch
 
   v1.1
 
@@ -598,9 +599,9 @@ p.intro {
   <xsl:choose>
     <xsl:when test='starts-with(.,"http" )'>
       <xsl:choose>
-        <xsl:when test='string-length(.) &gt; 50'>
+        <xsl:when test='string-length(.) &gt; 100'>
           <a class="link" href="{.}">URL</a>
-          <i> URL not shown as it is very long.</i>
+          <i> URL not shown as it is long.</i>
         </xsl:when>
         <xsl:otherwise>
           <a href="{.}"><xsl:value-of select="."/></a>
@@ -784,3 +785,4 @@ p.intro {
 </xsl:template>
 
 </xsl:stylesheet>
+
