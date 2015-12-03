@@ -619,6 +619,134 @@ p.intro {
 <xsl:template match="dc:rights" xmlns:dc="http://purl.org/dc/elements/1.1/">
 <tr><td class="key">Rights Management</td><td class="value"><xsl:value-of select="."/></td></tr></xsl:template>
 
+<!-- base_dc record -->
+
+<xsl:template match="oai_dc:dc"  xmlns:oai_dc="http://oai.base-search.net/base_dc/" >
+  <div class="dcdata">
+    <h3>BASE-enhanced Dublin Core Metadata (base_dc)</h3>
+    <table class="dcdata">
+      <xsl:apply-templates select="*" />
+    </table>
+  </div>
+</xsl:template>
+
+<xsl:template match="base_dc:collname" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+<tr><td class="key">Collection name</td><td class="value"><xsl:value-of select="."/></td></tr></xsl:template>
+
+<xsl:template match="base_dc:collection" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+<tr><td class="key">Collection code</td><td class="value"><xsl:value-of select="."/></td></tr></xsl:template>
+
+<xsl:template match="base_dc:source" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+<tr><td class="key">BASE source</td><td class="value"><xsl:value-of select="."/></td></tr></xsl:template>
+
+<xsl:template match="base_dc:rightsnorm" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+<tr><td class="key">Normalized license</td><td class="value"><xsl:value-of select="."/></td></tr></xsl:template>
+
+<xsl:template match="base_dc:year" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+<tr><td class="key">Year</td><td class="value"><xsl:value-of select="."/></td></tr></xsl:template>
+
+<xsl:template match="base_dc:contributor" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+<tr><td class="key">Contributor</td><td class="value"><xsl:value-of select="."/></td></tr></xsl:template>
+
+<xsl:template match="base_dc:oa" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+    <tr><td class="key">Access</td><td class="value">
+       <xsl:choose>
+        <xsl:when test='. = "0"'>
+          Closed access (0)
+        </xsl:when>
+        <xsl:when test='. = "1"'>
+          Open access (1)
+        </xsl:when>
+        <xsl:when test='. = "2"'>
+          Unknown (2)
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="."/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </td></tr></xsl:template>
+
+<xsl:template match="base_dc:typenorm" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+    <tr><td class="key">Normalized type</td><td class="value">
+       <xsl:choose>
+        <xsl:when test='. = "0000"'>
+          Text (0000)
+        </xsl:when>
+        <xsl:when test='. = "0001"'>
+          Article, journal (0001)
+        </xsl:when>
+        <xsl:when test='. = "0002"'>
+          Book (0002)
+        </xsl:when>
+        <xsl:when test='. = "0003"'>
+          Report, paper, lecture (0003)
+        </xsl:when>
+        <xsl:when test='. = "0004"'>
+          Thesis (0004)
+        </xsl:when>
+        <xsl:when test='. = "0005"'>
+          Review (0005)
+        </xsl:when>
+        <xsl:when test='. = "0101"'>
+          Audio (0101)
+        </xsl:when>
+        <xsl:when test='. = "0102"'>
+          Video (0102)
+        </xsl:when>
+        <xsl:when test='. = "0103"'>
+          Image (0103)
+        </xsl:when>
+        <xsl:when test='. = "0104"'>
+          Map (0104)
+        </xsl:when>
+        <xsl:when test='. = "0105"'>
+          Software (0105)
+        </xsl:when>
+        <xsl:when test='. = "0106"'>
+          Primary data (0106)
+        </xsl:when>
+        <xsl:when test='. = "0107"'>
+          Sheet music (0107)
+        </xsl:when>
+        <xsl:when test='. = "9999"'>
+          Unknown material (9999)
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="."/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </td></tr></xsl:template>
+
+<xsl:template match="base_dc:continent" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+<tr><td class="key">Continent</td><td class="value"><xsl:value-of select="."/></td></tr></xsl:template>
+
+<xsl:template match="base_dc:country" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+<tr><td class="key">Country</td><td class="value"><xsl:value-of select="."/></td></tr></xsl:template>
+
+<xsl:template match="base_dc:lang" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+<tr><td class="key">Lang</td><td class="value"><xsl:value-of select="."/></td></tr></xsl:template>
+
+<xsl:template match="base_dc:link" xmlns:base_dc="http://oai.base-search.net/base_dc/">
+<tr><td class="key">Link</td><td class="value">
+  <xsl:choose>
+    <xsl:when test='starts-with(.,"http" )'>
+      <xsl:choose>
+        <xsl:when test='string-length(.) &gt; 100'>
+          <a class="link" href="{.}">URL</a>
+          <i> URL not shown as it is long.</i>
+        </xsl:when>
+        <xsl:otherwise>
+          <a href="{.}"><xsl:value-of select="."/></a>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="."/>
+    </xsl:otherwise>
+  </xsl:choose>
+</td></tr></xsl:template>
+
+
 <!-- XML Pretty Maker -->
 
 <xsl:template match="node()" mode='xmlMarkup'>
