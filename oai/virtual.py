@@ -76,9 +76,9 @@ def compute_fingerprint(element):
         return create_paper_fingerprint(title, authors, date.year)
 
 class VirtualSetExtractor:
-    def format():
+    def formats():
         """
-        Returns the metadata format for which
+        Returns the metadata formats for which
         the extractor works
         """
 
@@ -96,8 +96,8 @@ class VirtualSetExtractor:
 
 class OAIDCSourceExtractor(VirtualSetExtractor):
     @staticmethod
-    def format():
-        return 'oai_dc'
+    def formats():
+        return ['oai_dc','base_dc']
 
     @staticmethod
     def subset():
@@ -110,8 +110,8 @@ class OAIDCSourceExtractor(VirtualSetExtractor):
 
 class OAIDCAuthorExtractor(VirtualSetExtractor):
     @staticmethod
-    def format():
-        return 'oai_dc'
+    def formats():
+        return ['oai_dc','base_dc']
 
     @staticmethod
     def subset():
@@ -146,8 +146,8 @@ class OAIDCAuthorExtractor(VirtualSetExtractor):
 
 class OAIDCLastnameExtractor(VirtualSetExtractor):
     @staticmethod
-    def format():
-        return 'oai_dc'
+    def formats():
+        return ['oai_dc','base_dc']
 
     @staticmethod
     def subset():
@@ -183,8 +183,8 @@ class OAIDCLastnameExtractor(VirtualSetExtractor):
 
 class OAIDCAuthorSigExtractor(VirtualSetExtractor):
     @staticmethod
-    def format():
-        return 'oai_dc'
+    def formats():
+        return ['oai_dc','base_dc']
 
     @staticmethod
     def subset():

@@ -8,4 +8,6 @@ psycopg2
 unidecode
 unicode_tex
 name_tools
--e git://github.com/wetneb/pyoai.git#egg=pyoai
+-e git://github.com/wetneb/pyoai.git@base_dc#egg=pyoai
+redis
+django-bulk-update

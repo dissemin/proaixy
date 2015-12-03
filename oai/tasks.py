@@ -12,8 +12,9 @@ from django.utils.timezone import now, make_aware, make_naive, UTC
 from django.db import IntegrityError, transaction
 from datetime import timedelta
 from time import sleep
+from bulk_update.helper import bulk_update
 
-from oaipmh.metadata import oai_dc_reader
+from oaipmh.metadata import oai_dc_reader, base_dc_reader
 from oaipmh.datestamp import tolerant_datestamp_to_datetime
 from oaipmh.error import ErrorBase, BadVerbError, DatestampError, NoRecordsMatchError, XMLSyntaxError
 
@@ -69,23 +70,31 @@ def recoverWithToken(source, format, token):
     saveRecordList(source, format, listRecords)
 
 def saveRecordList(source, format, listRecords):
-    # Small hack to commit the database every NB_RECORDS_BEFORE_COMMIT
-    recordFound = True
-    while recordFound:
-        i = 0
-        recordFound = False
-        with transaction.atomic():
-            try:
-                for record in listRecords:
-                    recordFound = True
-                    update_record(source, record, format)
-                    sleep(SLEEP_TIME_BETWEEN_RECORDS)
-                    i += 1
-                    if i > NB_RECORDS_BEFORE_COMMIT:
-                        break
-            except NoRecordsMatchError:
-                recordFound = False
+    def commit_records(buf):
+        # First separate existing and new records
+        identifiers = [r.identifier for r in buf]
+        records_to_update = OaiRecord.objects.filter(identifier__in=identifiers)
+        identifiers_found = set([r.identifier for r in records_to_update])
+        records_to_create = []
+        for r in buf:
+            if r.identifier not in identifiers_found:
+                records_to_create.append(r)
 
+        # Update existing ones
+        if records_to_update:
+            bulk_update(records_to_update)
+
+        # Create new records
+        OaiRecord.objects.bulk_create(records_to_create)
+
+    buf = []
+    for record in listRecords:
+        buf.append(create_record_instance(source, record, format))
+        if len(buf) >= NB_RECORDS_BEFORE_COMMIT:
+            commit_records(buf)
+            buf = []
+    if len(buf):
+        commit_records(buf)
 
 @task(serializer='json',bind=True)
 def fetch_from_source_task(self, pk):
@@ -100,7 +109,8 @@ def fetch_from_source(pk):#self, pk):
     # Set up the OAI fetcher
     format, created = OaiFormat.objects.get_or_create(name=METADATA_FORMAT) # defined in oai.settings
     client = source.getClient()
-    client._metadata_registry.registerReader(format.name, oai_dc_reader)
+    client._metadata_registry.registerReader('oai_dc', oai_dc_reader)
+    client._metadata_registry.registerReader('base_dc', base_dc_reader)
 
     # Limit queries to records in a time range of 7 days (by default)
     time_chunk = QUERY_TIME_RANGE
@@ -177,10 +187,31 @@ def fetch_formats_from_source(self, pk):
         f.namespace=format[2]
         f.save()
 
+def create_record_instance(source, record, format):
+    fullXML = record[1].element()
+    metadataStr = etree.tostring(fullXML, pretty_print=True)
+    identifier = record[0].identifier()[:256]
+    timestamp = record[0].datestamp()
+    timestamp = make_aware(timestamp, UTC())
+
+    fingerprint = compute_fingerprint(fullXML, format.name)
+    doi = extract_doi(fullXML, format.name)
+
+    return OaiRecord(
+        identifier=identifier,
+        format=format,
+        source=source,
+        metadata=metadataStr,
+        timestamp=timestamp,
+        fingerprint=fingerprint,
+        doi=doi)
+
+
 @transaction.atomic
 def update_record(source, record, format):
     if not record[1]:
         return
+    modelrecord = create_model_record(source, record, format)
     fullXML = record[1].element()
     metadataStr = etree.tostring(fullXML, pretty_print=True)
     identifier = record[0].identifier()

@@ -158,7 +158,7 @@ class OaiRecord(models.Model):
         """
         fullXML = etree.fromstring(self.metadata)
         for extractor in REGISTERED_EXTRACTORS:
-            if extractor.format() == self.format.name:
+            if self.format.name in extractor.formats():
                 sets = extractor.getVirtualSets(fullXML, self.source)
                 # print "Sets for "+identifier+": "+str(sets)
                 for set in sets:
