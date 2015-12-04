@@ -10,7 +10,7 @@ from urllib2 import URLError, HTTPError
 
 from django.utils.timezone import now, make_aware, make_naive, UTC
 from django.db import IntegrityError, transaction
-from datetime import timedelta
+from datetime import timedelta, datetime
 from time import sleep
 from bulk_update.helper import bulk_update
 
@@ -80,12 +80,24 @@ def saveRecordList(source, format, listRecords):
             if r.identifier not in identifiers_found:
                 records_to_create.append(r)
 
+        # Create new records
+        try:
+            OaiRecord.objects.bulk_create(records_to_create)
+        except IntegrityError:
+            # No idea why this can actually happen
+            for r in records_to_create:
+                OaiRecord.objects.get_or_create(identifier=r.identifier,
+                        defaults={'source':r.source,
+                                  'timestamp':r.timestamp,
+                                  'format':r.format,
+                                  'fingerprint':r.fingerprint,
+                                  'doi':r.doi,
+                                  'metadata':r.metadata,
+                                  'last_modified':r.last_modified or datetime.now()})
+
         # Update existing ones
         if records_to_update:
             bulk_update(records_to_update)
-
-        # Create new records
-        OaiRecord.objects.bulk_create(records_to_create)
 
     buf = []
     for record in listRecords:
