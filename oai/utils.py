@@ -259,5 +259,37 @@ def tolerant_datestamp_to_datetime(datestamp):
         int(YYYY), int(MM), int(DD), int(hh), int(mm), int(ss))
 
 
+#### Crossref utilities
+
+def convert_to_name_pair(dct):
+    if 'family' in dct and 'given' in dct:
+        return (dct['given'],dct['family'])
+    elif 'family' in dct:
+        return ('',dct['family'])
+    elif 'literal' in dct:
+        return parse_comma_name(dct['literal'])
+
+def parse_crossref_date(date):
+    ret = None
+    if 'date-parts' in date:
+        try:
+            for date in date['date-parts']:
+                ret = date_from_dateparts(date)
+                if ret is not None:
+                    return ret
+        except ValueError:
+            pass
+    if 'raw' in date:
+        ret = tolerant_datestamp_to_datetime(date['raw']).date()
+    return ret
+
+def get_fingerprint_from_citeproc(citeproc):
+    title = citeproc.get('title')
+    authors = map(convert_to_name_pair, citeproc.get('author', []))
+    pubdate = parse_crossref_date(citeproc.get('issued'))
+    if not pubdate or not authors:
+        return
+    return create_paper_fingerprint(title, authors, pubdate.year)
+
 
 

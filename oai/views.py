@@ -19,9 +19,12 @@ from celery.task.control import revoke
 
 from datetime import datetime
 
+import requests
+
 from oai.tasks import *
 from oai.models import *
-from oai.utils import to_kv_pairs, OaiRequestError
+from oai.utils import *
+from oai.name import parse_comma_name
 from oai.settings import *
 from oai.resumption import *
 from oai.forms import *
@@ -239,5 +242,57 @@ def getListQuery(context, request):
     return queryParameters
  
 
+oai_dc_namespaces = {'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
+ 'dc': 'http://purl.org/dc/elements/1.1/'}
+base_dc_namespaces = {'base_dc': 'http://oai.base-search.net/base_dc/',
+ 'dc': 'http://purl.org/dc/elements/1.1/'}
 
+def get_pdf_url(record):
+    xml = etree.fromstring(record.metadata)
+    oa = False
+    identifier_field = 'oai_dc:dc/dc:identifier/text()'
+    link_field = 'oai_dc:dc/dc:link/text()'
+    if record.format_id == 1:
+        identifier_field = 'base_dc:dc/base_dc:identifier/text()'
+        link_field = 'base_dc:dc/base_dc:link/text()'
+        xpath_ev = etree.XPathEvaluator(xml, namespaces=base_dc_namespaces)
+        oa_status = xpath_ev.evaluate('base_dc:dc/base_dc:oa/text()')
+        for matches in oa_status:
+            if matches.strip() == '1':
+                oa = True
+
+    else:
+        xpath_ev = etree.XPathEvaluator(xml, namespaces=oai_dc_namespaces)
+    print record.format_id
+    matches = xpath_ev.evaluate(identifier_field)
+    matches += xpath_ev.evaluate(link_field)
+    for m in matches:
+        print m
+        if oa or m.endswith('.pdf'):
+            return m
+
+def get_doi(request, doi):
+    doi_url = 'http://dx.doi.org/' + doi
+    rg_pdf_url = None
+    for r in OaiRecord.objects.filter(doi=doi):
+        print r.identifier
+        pdf_url = get_pdf_url(r)
+        if pdf_url:
+            if 'researchgate.net' in pdf_url:
+                rg_pdf_url = pdf_url
+            else:
+                return HttpResponseRedirect(pdf_url)
+
+    r = requests.get('http://doi-cache.dissem.in/' + doi)
+    fp = get_fingerprint_from_citeproc(r.json())
+    if fp:
+        for r in OaiRecord.objects.filter(fingerprint=fp):
+            print r.identifier
+            pdf_url = get_pdf_url(r)
+            if pdf_url:
+                return HttpResponseRedirect(pdf_url)
+
+    if rg_pdf_url:
+        return HttpResponseRedirect(rg_pdf_url)
+    return HttpResponseRedirect(doi_url)
 
