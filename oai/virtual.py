@@ -18,7 +18,7 @@ def to_doi(candidate):
     """ Convert a representation of a DOI to its normal form. """
     m = doi_re.match(candidate)
     if m:
-        return m.groups()[0]
+        return m.groups()[0].lower()
     else:
         return None
 

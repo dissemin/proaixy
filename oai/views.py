@@ -199,7 +199,7 @@ def getListQuery(context, request):
             doi = set[len(DOI_IDENTIFIER_PREFIX):]
             if not doi:
                 raise OaiRequestError('badArgument', 'Invalid DOI.')
-            queryParameters['doi'] = doi
+            queryParameters['doi'] = doi.lower()
         else:
             matchingSet = OaiSet.byRepresentation(set)
             if not matchingSet:
