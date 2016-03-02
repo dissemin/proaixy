@@ -9,6 +9,7 @@ from oai.views import *
 
 urlpatterns = patterns('',
         url(r'^$', TemplateView.as_view(template_name='oai/front.html'), name='front'),
+        url(r'^tos$', TemplateView.as_view(template_name='oai/tos.html'), name='tos'),
         url(r'^'+OAI_ENDPOINT_NAME+'$', endpoint, name='oaiEndpoint'),
         url(r'^ctl$', controlPannel, name='controlPannel'),
         url(r'^login/$', login, {'template_name': 'admin/login.html'}),

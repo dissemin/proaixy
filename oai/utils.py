@@ -284,12 +284,17 @@ def parse_crossref_date(date):
     return ret
 
 def get_fingerprint_from_citeproc(citeproc):
-    title = citeproc.get('title')
-    authors = map(convert_to_name_pair, citeproc.get('author', []))
-    pubdate = parse_crossref_date(citeproc.get('issued'))
-    if not pubdate or not authors:
+    try:
+        title = citeproc.get('title')
+        authors = map(convert_to_name_pair, citeproc.get('author', []))
+        pubdate = parse_crossref_date(citeproc.get('issued'))
+        if not title or not pubdate or not authors:
+            return
+        if type(title) == list:
+            title = title[0]
+        return create_paper_fingerprint(title, authors, pubdate.year)
+    except (ValueError, AttributeError, TypeError):
         return
-    return create_paper_fingerprint(title, authors, pubdate.year)
 
 
 
