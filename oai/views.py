@@ -144,6 +144,7 @@ def getRecord(request, context):
 def listSomething(request, context, verb):
     getpost = request.GET.dict()
     getpost.update(request.POST.dict())
+    context['format'] = getpost.get('metadataPrefix')
     if 'resumptionToken' in getpost:
         return resumeRequest(context, request, verb, getpost.get('resumptionToken'))
     queryParameters = dict()
@@ -184,11 +185,12 @@ def getListQuery(context, request):
     metadataPrefix = getParams.pop('metadataPrefix', None)
     if not metadataPrefix:
         raise OaiRequestError('badArgument', 'The metadataPrefix argument is required.')
-    try:
-        format = OaiFormat.objects.get(name=metadataPrefix)
-    except ObjectDoesNotExist:
-        raise OaiRequestError('badArgument', 'The metadata format "'+metadataPrefix+'" does not exist.')
-    queryParameters['format'] = format
+    if metadataPrefix != 'any':
+        try:
+            format = OaiFormat.objects.get(name=metadataPrefix)
+        except ObjectDoesNotExist:
+            raise OaiRequestError('badArgument', 'The metadata format "'+metadataPrefix+'" does not exist.')
+        queryParameters['format'] = format
 
     # set
     set = getParams.pop('set', None)
