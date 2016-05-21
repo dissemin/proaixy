@@ -6,6 +6,7 @@ from lxml import etree
 from django.db import models
 from django.db.models import F
 from django.utils.functional import cached_property
+from django.utils.html import escape
 from django.core.exceptions import ObjectDoesNotExist
 from djcelery.models import TaskMeta, PeriodicTask, TaskState
 
@@ -152,11 +153,31 @@ class OaiRecord(models.Model):
 
     def __unicode__(self):
         return self.identifier
+
+    def render_metadata(self):
+        """
+        Render the metadata, to be included in the
+        output of the OAI interface
+        """
+        # If that's already plain XML, just include it
+        try:
+            etree.fromstring(self.metadata)
+            return self.metadata
+        except etree.XMLSyntaxError as e:
+            pass
+
+        # Otherwise wrap it inside the appropriate OAI tags
+        return ('<metadata xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">%s</metadata>' % escape(self.metadata))
+
     def get_virtual_sets(self):
         """
         Returns the list of virtual sets for this extractor
         """
-        fullXML = etree.fromstring(self.metadata)
+        try:
+            fullXML = etree.fromstring(self.metadata)
+        except etree.XMLSyntaxError as e:
+            return
+
         for extractor in REGISTERED_EXTRACTORS:
             if self.format.name in extractor.formats():
                 sets = extractor.getVirtualSets(fullXML, self.source)

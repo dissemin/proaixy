@@ -9,7 +9,7 @@
         <datestamp>{{ record.timestamp | isoformat }}</datestamp>{% for setspec in record.get_virtual_sets %}
         <setSpec>proaixy:{{ setspec }}</setSpec>{% endfor %}
     </header>
-    {% autoescape off %}{{ record.metadata }}{% endautoescape %}
+    {% autoescape off %}{{ record.render_metadata }}{% endautoescape %}
 </record>{% endfor %}{% if token %}
 <resumptionToken cursor="{{ token.cursor }}" completeListSize="{{ token.total_count }}">{{ token.key }}</resumptionToken>
 {% endif %}
