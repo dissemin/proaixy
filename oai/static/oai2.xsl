@@ -492,6 +492,10 @@ p.intro {
     </td></tr>
     <tr><td class="key">Datestamp</td>
     <td class="value"><xsl:value-of select="oai:datestamp"/></td></tr>
+<xsl:if test="oai:format">
+    <tr><td class="key">Format</td>
+    <td class="value"><xsl:value-of select="oai:format"/></td></tr>
+   </xsl:if>
   <xsl:apply-templates select="oai:setSpec" />
   </table>
   <xsl:if test="@status='deleted'">
