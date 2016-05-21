@@ -5,7 +5,8 @@
 <ListRecords>{% for record in matches %}
 <record>
     <header>
-        <identifier>{{ record.identifier }}</identifier>
+        <identifier>{{ record.identifier }}</identifier>{% if format == "any" %} 
+        <format>{{ record.format_name }}</format>{% endif %}
         <datestamp>{{ record.timestamp | isoformat }}</datestamp>{% for setspec in record.get_virtual_sets %}
         <setSpec>proaixy:{{ setspec }}</setSpec>{% endfor %}
     </header>

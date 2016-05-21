@@ -4,7 +4,8 @@
 {% if matches %}
 <ListIdentifiers>{% for record in matches %}
 <header>
-    <identifier>{{ record.identifier }}</identifier>
+    <identifier>{{ record.identifier }}</identifier>{% if format == "any" %} 
+    <format>{{ record.format_name }}</format>{% endif %}
     <datestamp>{{ record.timestamp | isoformat }}</datestamp>{% for setspec in record.sets.all %}
     <setSpec>{{ setspec }}</setSpec>{% endfor %}
 </header>{% endfor %}{% if token %}

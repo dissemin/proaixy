@@ -129,6 +129,21 @@ class OaiFormat(models.Model):
     def __unicode__(self):
         return self.name
 
+# Lazy conversion from OaiFormat.pk to OaiFormat.identifier
+# This function is called once per rendered record, so
+# prefetching once the list of OaiFormats is cheaper.
+oaiformats_cache = None
+
+def getOaiFormatName(pk):
+    global oaiformats_cache
+    if oaiformats_cache is None:
+        oaiformats_cache = {k:v for (k,v) in OaiFormat.objects.all().values('pk','name')}
+    try:
+        return oaiformats_cache[pk]
+    except KeyError:
+        return OaiFormat.objects.get(pk=pk).name
+
+
 from oai.virtual import REGISTERED_EXTRACTORS
 
 # A record from an OAI source
@@ -187,6 +202,14 @@ class OaiRecord(models.Model):
                         continue
                     name = extractor.subset()+':'+set
                     yield name
+
+    @property
+    def format_name(self):
+        """
+        Returns the identifier of the format without fetching
+        the OaiFormat
+        """
+        return getOaiFormatName(self.format_id)
 
 # A resumption token for the output interface
 class ResumptionToken(models.Model):
