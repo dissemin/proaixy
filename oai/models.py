@@ -150,7 +150,7 @@ from oai.virtual import REGISTERED_EXTRACTORS
 class OaiRecord(models.Model):
     source = models.ForeignKey(OaiSource)
     # Last modified by the OAI source
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(db_index=True)
     # The format of the metadata
     format = models.ForeignKey(OaiFormat)
     # The unique ID of the metadata from the source
