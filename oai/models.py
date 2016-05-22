@@ -219,9 +219,7 @@ class ResumptionToken(models.Model):
     metadataPrefix = models.ForeignKey(OaiFormat, null=True, blank=True)
     fro = models.DateTimeField(null=True, blank=True)
     until = models.DateTimeField(null=True, blank=True)
-    offset = models.IntegerField()
-    cursor = models.IntegerField()
-    total_count = models.IntegerField()
+    firstpk = models.IntegerField()
     key = models.CharField(max_length=128, null=True, blank=True)
     def __unicode__(self):
         return self.key
@@ -229,9 +227,9 @@ class ResumptionToken(models.Model):
         m = hashlib.md5()
         m.update('%s_%s_%d_%s_%s_%s_%s_%d' % (RESUMPTION_TOKEN_SALT, ndt(self.date_created),
                         self.id, nstr(self.set), self.metadataPrefix,
-                        ndt(self.fro), ndt(self.until), self.offset))
+                        ndt(self.fro), ndt(self.until), self.firstpk))
         self.key = m.hexdigest()
-        self.save()
+        self.save(update_fields=['key'])
 
 
 

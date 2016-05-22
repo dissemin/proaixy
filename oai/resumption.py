@@ -16,26 +16,26 @@ from oai.models import *
 from oai.utils import to_kv_pairs, OaiRequestError
 from oai.settings import *
 
-def handleListQuery(request, context, queryType, parameters, offset=0):
+def handleListQuery(request, context, queryType, parameters, firstpk=0):
     if queryType == 'ListRecords' or queryType == 'ListIdentifiers':
-        matches = OaiRecord.objects.filter(**parameters)
+        matches = OaiRecord.objects.order_by('pk').filter(**parameters)
     elif queryType == 'ListSets':
         matches = OaiSet.objects.all()
     else:
         raise OaiRequestError('badArgument', 'Illegal verb.')
-    matches = list(matches[offset:(offset+RESULTS_LIMIT+1)])
+    matches = list(matches.filter(pk__gte=firstpk)[:RESULTS_LIMIT+1])
     count = len(matches)
     # Should we create a resumption token?
     if count > RESULTS_LIMIT:
-        token = createResumptionToken(queryType, parameters, offset+RESULTS_LIMIT, count)
+        lastpk = matches[-1].pk
+        token = createResumptionToken(queryType, parameters, lastpk)
         context['token'] = token
     context['matches'] = matches
     return render(request, 'oai/'+queryType+'.xml', context, content_type='text/xml')
 
 
-def createResumptionToken(queryType, queryParameters, offset, totalCount):
-    token = ResumptionToken(queryType=queryType, offset=offset,
-            cursor=offset-RESULTS_LIMIT, total_count=totalCount)
+def createResumptionToken(queryType, queryParameters, firstpk):
+    token = ResumptionToken(queryType=queryType, firstpk=firstpk)
     if 'format' in queryParameters:
         token.metadataPrefix = queryParameters['format']
     if 'timestamp__gte' in queryParameters:
@@ -62,7 +62,7 @@ def resumeRequest(context, request, queryType, key):
         parameters['timestamp__gte'] = token.fro
     if token.until:
         parameters['timestamp__lte'] = token.until
-    return handleListQuery(request, context, queryType, parameters, token.offset)
+    return handleListQuery(request, context, queryType, parameters, token.firstpk)
     
 
 
