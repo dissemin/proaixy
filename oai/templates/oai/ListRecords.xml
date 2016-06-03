@@ -3,15 +3,8 @@
 {% block mainContent %}
 {% if matches %}
 <ListRecords>{% for record in matches %}
-<record>
-    <header>
-        <identifier>{{ record.identifier }}</identifier>{% if format == "any" %} 
-        <format>{{ record.format_name }}</format>{% endif %}
-        <datestamp>{{ record.timestamp | isoformat }}</datestamp>{% for setspec in record.get_virtual_sets %}
-        <setSpec>proaixy:{{ setspec }}</setSpec>{% endfor %}
-    </header>
-    {% autoescape off %}{{ record.render_metadata }}{% endautoescape %}
-</record>{% endfor %}{% if token %}
+{% include "oai/record.xml" with record=record %}
+{% endfor %}{% if token %}
 <resumptionToken cursor="{{ token.cursor }}" completeListSize="{{ token.total_count }}">{{ token.key }}</resumptionToken>
 {% endif %}
 </ListRecords>{% else %}<error code="noRecordsMatch">The query returned no results.</error>{% endif %}{% endblock %}

@@ -118,7 +118,7 @@ def identify(request, context):
     context['baseURL'] = 'http://'+request.get_host()+'/'+OAI_ENDPOINT_NAME
     context['repoName'] = REPOSITORY_NAME
     context['adminEmail'] = ADMIN_EMAIL
-    earliest = OaiRecord.objects.order_by('timestamp').first()
+    earliest = OaiRecord.objects.order_by('last_modified').first()
     if earliest:
         context['earliestDatestamp'] = earliest.timestamp
     else:
@@ -220,7 +220,7 @@ def getListQuery(context, request):
         except DatestampError:
             raise OaiRequestError('badArgument',
                     'The parameter "from" expects a valid date, not "'+from_+"'.")
-        queryParameters['timestamp__gte'] = make_aware(from_, UTC())
+        queryParameters['last_modified__gte'] = make_aware(from_, UTC())
 
     # until
     until = getParams.pop('until', None)
@@ -230,7 +230,7 @@ def getListQuery(context, request):
         except DatestampError:
             raise OaiRequestError('badArgument',
                     'The parameter "until" expects a valid date, not "'+until+"'.")
-        queryParameters['timestamp__lte'] = make_aware(until, UTC())
+        queryParameters['last_modified__lte'] = make_aware(until, UTC())
 
     # Check that from <= until
     if from_ and until and from_ > until:

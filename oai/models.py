@@ -166,6 +166,11 @@ class OaiRecord(models.Model):
     # Last updated by us
     last_modified = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        index_together = [
+            ['last_modified','id'],
+        ]
+
     def __unicode__(self):
         return self.identifier
 
@@ -220,6 +225,7 @@ class ResumptionToken(models.Model):
     fro = models.DateTimeField(null=True, blank=True)
     until = models.DateTimeField(null=True, blank=True)
     firstpk = models.IntegerField()
+    first_timestamp = models.DateTimeField()
     key = models.CharField(max_length=128, null=True, blank=True)
     def __unicode__(self):
         return self.key

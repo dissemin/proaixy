@@ -1,0 +1,10 @@
+{% load iso %}
+<record>
+    <header>
+        <identifier>{{ record.identifier }}</identifier>{% if format == "any" %} 
+        <format>{{ record.format_name }}</format>{% endif %}
+        <datestamp>{{ record.last_modified | isoformat }}</datestamp>{% for setspec in record.get_virtual_sets %}
+        <setSpec>proaixy:{{ setspec }}</setSpec>{% endfor %}
+    </header>
+    {% autoescape off %}{{ record.metadata }}{% endautoescape %}
+</record>

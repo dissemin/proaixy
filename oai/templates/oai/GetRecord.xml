@@ -2,12 +2,5 @@
 {% load iso %}
 {% block mainContent %}
 <GetRecord>
-    <record>
-    <header>
-        <identifier>{{ record.identifier }}</identifier>
-        <datestamp>{{ record.timestamp | isoformat }}</datestamp>{% for setspec in record.sets.all %}
-        <setSpec>{{ setspec }}</setSpec>{% endfor %}
-    </header>
-    {% autoescape off %}{{ record.metadata }}{% endautoescape %}
-</record>
+    {% include "oai/record.xml" with record=record %}
 </GetRecord>{% endblock mainContent %}

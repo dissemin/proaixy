@@ -16,32 +16,36 @@ from oai.models import *
 from oai.utils import to_kv_pairs, OaiRequestError
 from oai.settings import *
 
-def handleListQuery(request, context, queryType, parameters, firstpk=0):
+def handleListQuery(request, context, queryType, parameters, firstpk=None, first_timestamp=None):
     if queryType == 'ListRecords' or queryType == 'ListIdentifiers':
-        matches = OaiRecord.objects.order_by('pk').filter(**parameters)
+        matches = OaiRecord.objects.order_by('last_modified', 'pk').filter(**parameters)
     elif queryType == 'ListSets':
-        matches = OaiSet.objects.all()
+        matches = OaiSet.objects.order_by('pk')
     else:
         raise OaiRequestError('badArgument', 'Illegal verb.')
-    matches = list(matches.filter(pk__gte=firstpk)[:RESULTS_LIMIT+1])
+    if queryType == 'ListRecords' and firstpk is not None and first_timestamp is not None:
+        matches = matches.filter(pk__gte=firstpk,last_modified__gte=first_timestamp)
+    matches = list(matches[:RESULTS_LIMIT+1])
     count = len(matches)
     # Should we create a resumption token?
     if count > RESULTS_LIMIT:
         lastpk = matches[-1].pk
-        token = createResumptionToken(queryType, parameters, lastpk)
+        last_timestamp = matches[-1].last_modified
+        token = createResumptionToken(queryType, parameters, lastpk, last_timestamp)
         context['token'] = token
     context['matches'] = matches
     return render(request, 'oai/'+queryType+'.xml', context, content_type='text/xml')
 
 
-def createResumptionToken(queryType, queryParameters, firstpk):
-    token = ResumptionToken(queryType=queryType, firstpk=firstpk)
+def createResumptionToken(queryType, queryParameters, firstpk, first_timestamp):
+    token = ResumptionToken(queryType=queryType,
+            firstpk=firstpk, first_timestamp=first_timestamp)
     if 'format' in queryParameters:
         token.metadataPrefix = queryParameters['format']
-    if 'timestamp__gte' in queryParameters:
-        token.fro = queryParameters['timestamp__gte']
-    if 'timestamp__lte' in queryParameters:
-        token.until = queryParameters['timestamp__lte']
+    if 'last_modified__gte' in queryParameters:
+        token.fro = queryParameters['last_modified__gte']
+    if 'last_modified__lte' in queryParameters:
+        token.until = queryParameters['last_modified__lte']
     if 'sets' in queryParameters:
         token.set = queryParameters['sets']
     token.save()
@@ -59,10 +63,10 @@ def resumeRequest(context, request, queryType, key):
     if token.set:
         parameters['sets'] = token.set
     if token.fro:
-        parameters['timestamp__gte'] = token.fro
+        parameters['last_modified__gte'] = token.fro
     if token.until:
-        parameters['timestamp__lte'] = token.until
-    return handleListQuery(request, context, queryType, parameters, token.firstpk)
+        parameters['last_modified__lte'] = token.until
+    return handleListQuery(request, context, queryType, parameters, token.firstpk, token.first_timestamp)
     
 
 
