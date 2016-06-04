@@ -273,6 +273,11 @@ def get_pdf_url(record):
         if oa or m.endswith('.pdf'):
             return m
 
+def redirect_no_referrer(url):
+    resp = HttpResponseRedirect(url)
+    resp['Referrer-Policy'] = 'no-referrer'
+    return resp
+
 def get_doi(request, doi):
     doi_url = 'http://dx.doi.org/' + doi
     rg_pdf_url = None
@@ -295,6 +300,6 @@ def get_doi(request, doi):
                 return HttpResponseRedirect(pdf_url)
 
     if rg_pdf_url:
-        return HttpResponseRedirect(rg_pdf_url)
+        return redirect_no_referrer(rg_pdf_url)
     return HttpResponseRedirect(doi_url)
 
