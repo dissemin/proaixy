@@ -164,7 +164,7 @@ class OaiRecord(models.Model):
     # The metadata as an XML object
     metadata = models.TextField()
     # Last updated by us
-    last_modified = models.DateTimeField(auto_now=True)
+    last_modified = models.DateTimeField(auto_now=True, db_index=True)
 
     class Meta:
         index_together = [
