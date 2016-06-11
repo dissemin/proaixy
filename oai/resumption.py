@@ -58,8 +58,10 @@ def resumeRequest(context, request, queryType, key):
     except ObjectDoesNotExist:
         raise OaiRequestError('badResumptionToken', 'This resumption token is invalid: "'+key+'", "'+queryType+'"', context, request)
     parameters = dict()
-    if token.metadataPrefix:
-        parameters['format'] = token.metadataPrefix
+    format = token.metadataPrefix or 'any'
+    context['format'] = format
+    if format != 'any':
+        parameters['format'] = format
     if token.set:
         parameters['sets'] = token.set
     if token.fro:
