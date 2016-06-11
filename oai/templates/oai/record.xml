@@ -6,5 +6,5 @@
         <datestamp>{{ record.last_modified | isoformat }}</datestamp>{% for setspec in record.get_virtual_sets %}
         <setSpec>proaixy:{{ setspec }}</setSpec>{% endfor %}
     </header>
-    {% autoescape off %}{{ record.metadata }}{% endautoescape %}
+    {% autoescape off %}{{ record.render_metadata }}{% endautoescape %}
 </record>
