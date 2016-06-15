@@ -134,10 +134,12 @@ def getRecord(request, context):
     except ObjectDoesNotExist:
         raise OaiRequestError('badArgument', 'The metadata format "'+format_name+'" does not exist.')
     record_id = getpost.get('identifier')
+    if not record_id:
+        raise OaiRequestError('badArgument', 'An identifier has to be provided.')
     try:
         record = OaiRecord.objects.get(identifier=record_id)
     except ObjectDoesNotExist:
-        raise OaiRequestError('badArgument', 'The record "'+record_id+'" does not exist.')
+        raise OaiRequestError('badArgument', 'The record "'+unicode(record_id)+'" does not exist.')
     context['record'] = record
     return render(request, 'oai/GetRecord.xml', context, content_type='text/xml')
 
