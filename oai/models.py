@@ -237,5 +237,18 @@ class ResumptionToken(models.Model):
         self.key = m.hexdigest()
         self.save(update_fields=['key'])
 
+import binascii
+import os
+
+def fresh_api_key():
+    return binascii.hexlify(os.urandom(10))
+
+
+class ApiKey(models.Model):
+    key = models.CharField(max_length=64, default=fresh_api_key, unique=True)
+    name = models.CharField(max_length=128, unique=True)
+
+    def __unicode__(self):
+        return self.name+': '+self.key
 
 

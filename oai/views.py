@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.template import RequestContext, loader
 from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
@@ -84,10 +84,26 @@ def formatError(errorCode, errorMessage, context, request):
     context['errorMessage'] = errorMessage
     return render(request, 'oai/error.xml', context, content_type='text/xml')
 
+def set_api_key_cookie(request):
+    key = request.GET.get('key')
+    if not key:
+        return HttpResponse('key value required.')
+    
+    response = HttpResponse('cookie set.')
+    response.set_cookie('key', key, max_age=365*24*3600)
+    return response
+
 @csrf_exempt
 def endpoint(request):
     params = dict(request.POST.items() + request.GET.items())
     verb = params.get('verb')
+
+    # Authenticate the user
+    api_key = params.get('key') or request.COOKIES.get('key')
+    if not api_key or not ApiKey.objects.filter(key=api_key).count():
+        return HttpResponseForbidden('API key required')
+    if 'key' in params:
+        del params['key']
 
     thisUrl = 'http://'+request.get_host()+request.get_full_path()
     timestamp = datetime.utcnow()
@@ -104,11 +120,11 @@ def endpoint(request):
         if verb == 'Identify':
             return identify(request, context)
         elif verb == 'GetRecord':
-            return getRecord(request, context)
+            return getRecord(request, context, params)
         elif verb == 'ListRecords' or verb == 'ListIdentifiers' or verb == 'ListSets':
-            return listSomething(request, context, verb)
+            return listSomething(request, context, verb, params)
         elif verb == 'ListMetadataFormats':
-            return listMetadataFormats(request, context)
+            return listMetadataFormats(request, context, params)
         else:
             raise OaiRequestError('badVerb', 'Verb "'+verb+'" is not implemented.')
     except OaiRequestError as e:
@@ -125,9 +141,7 @@ def identify(request, context):
         context['earliestDatestamp'] = timezone.now()
     return render(request, 'oai/identify.xml', context, content_type='text/xml')
 
-def getRecord(request, context):
-    getpost = request.GET.dict()
-    getpost.update(request.POST.dict())
+def getRecord(request, context, getpost):
     format_name = getpost.get('metadataPrefix')
     try:
         format = OaiFormat.objects.get(name=format_name)
@@ -143,21 +157,17 @@ def getRecord(request, context):
     context['record'] = record
     return render(request, 'oai/GetRecord.xml', context, content_type='text/xml')
 
-def listSomething(request, context, verb):
-    getpost = request.GET.dict()
-    getpost.update(request.POST.dict())
+def listSomething(request, context, verb, getpost):
     context['format'] = getpost.get('metadataPrefix')
     if 'resumptionToken' in getpost:
         return resumeRequest(context, request, verb, getpost.get('resumptionToken'))
     queryParameters = dict()
     error = None
     if verb == 'ListRecords' or verb == 'ListIdentifiers':
-        queryParameters = getListQuery(context, request)
+        queryParameters = getListQuery(context, getpost)
     return handleListQuery(request, context, verb, queryParameters)
 
-def listMetadataFormats(request, context):
-    getpost = request.GET.dict()
-    getpost.update(request.POST.dict())
+def listMetadataFormats(request, context, getpost):
     queryParameters = dict()
     matches = OaiFormat.objects.all()
     if 'identifier' in getpost:
@@ -172,19 +182,15 @@ def listMetadataFormats(request, context):
         return render(request, 'oai/ListMetadataFormats.xml', context, content_type='text/xml')
 
 
-def getListQuery(context, request):
+def getListQuery(context, getpost):
     """
     Returns the query dictionary corresponding to the request
     Raises OaiRequestError if anything goes wrong
     """
     queryParameters = dict()
 
-    # Both POST and GET arguments *must* be supported according to the standard
-    # In this implementation, POST arguments are prioritary.
-    getParams = dict(request.GET.dict().items() + request.POST.dict().items())
-    
     # metadataPrefix
-    metadataPrefix = getParams.pop('metadataPrefix', None)
+    metadataPrefix = getpost.pop('metadataPrefix', None)
     if not metadataPrefix:
         raise OaiRequestError('badArgument', 'The metadataPrefix argument is required.')
     if metadataPrefix != 'any':
@@ -195,7 +201,7 @@ def getListQuery(context, request):
         queryParameters['format'] = format
 
     # set
-    set = getParams.pop('set', None)
+    set = getpost.pop('set', None)
     if set:
         if set.startswith(FINGERPRINT_IDENTIFIER_PREFIX):
             fingerprint = set[len(FINGERPRINT_IDENTIFIER_PREFIX):]
@@ -215,7 +221,7 @@ def getListQuery(context, request):
 
     
     # from
-    from_ = getParams.pop('from', None)
+    from_ = getpost.pop('from', None)
     if from_:
         try:
             from_ = tolerant_datestamp_to_datetime(from_)
@@ -225,7 +231,7 @@ def getListQuery(context, request):
         queryParameters['last_modified__gte'] = make_aware(from_, UTC())
 
     # until
-    until = getParams.pop('until', None)
+    until = getpost.pop('until', None)
     if until:
         try:
             until = tolerant_datestamp_to_datetime(until)
@@ -239,8 +245,8 @@ def getListQuery(context, request):
         raise OaiRequestError('badArgument', '"from" should not be after "until".')
 
     # Check that there are no other arguments
-    getParams.pop('verb', None)
-    for key in getParams:
+    getpost.pop('verb', None)
+    for key in getpost:
         raise OaiRequestError('badArgument', 'The argument "'+key+'" is illegal.')
 
     return queryParameters

@@ -12,11 +12,19 @@ class OaiErrorInline(admin.TabularInline):
 class OaiSourceAdmin(admin.ModelAdmin):
     inlines = [OaiErrorInline]
 
+class ApiKeyAdmin(admin.ModelAdmin):
+    fieldsets = [
+            (None, {
+                'fields': ('name',)
+                })
+            ]
+
 class TaskMetaAdmin(admin.ModelAdmin):
-        readonly_fields = ('result',)    
+        readonly_fields = ('result',)
 
 admin.site.register(TaskMeta, TaskMetaAdmin)
 
+admin.site.register(ApiKey, ApiKeyAdmin)
 admin.site.register(OaiSource, OaiSourceAdmin)
 admin.site.register(OaiRecord)
 admin.site.register(OaiSet)
