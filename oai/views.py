@@ -11,6 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpResponseRedirect
 from django.db.models import Sum
+from django.utils.six.moves.urllib.parse import unquote
 
 from oaipmh.datestamp import tolerant_datestamp_to_datetime
 from oaipmh.error import DatestampError
@@ -287,10 +288,10 @@ def redirect_no_referrer(url):
     return resp
 
 def get_doi(request, doi):
-    doi_url = 'http://dx.doi.org/' + doi
+    doi = unquote(doi)
+    doi_url = 'https://doi.org/' + doi
     rg_pdf_url = None
     for r in OaiRecord.objects.filter(doi=doi):
-        print r.identifier
         pdf_url = get_pdf_url(r)
         if pdf_url:
             if 'researchgate.net' in pdf_url:
@@ -302,7 +303,6 @@ def get_doi(request, doi):
     fp = get_fingerprint_from_citeproc(r.json())
     if fp:
         for r in OaiRecord.objects.filter(fingerprint=fp):
-            print r.identifier
             pdf_url = get_pdf_url(r)
             if pdf_url:
                 return HttpResponseRedirect(pdf_url)
