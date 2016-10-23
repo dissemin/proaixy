@@ -4,5 +4,5 @@
 <Image width="16" height="16" type="image/x-icon">http://dissem.in/favicon/favicon-16x16.png</Image>
 <Url type="text/html" method="GET"
     xmlns:z="http://www.zotero.org/namespaces/openSearch#" 
-    template="http://doai.io/{z:doi}"/>
+    template="http://doai.io/{z:DOI}"/>
 </OpenSearchDescription>
