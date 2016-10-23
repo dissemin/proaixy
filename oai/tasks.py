@@ -65,7 +65,8 @@ def addSourceFromURL(url, prefix, get_method=False):
 
 def recoverWithToken(source, format, token):
     client = source.getClient()
-    client._metadata_registry.registerReader(format.name, oai_dc_reader)
+    client._metadata_registry.registerReader('oai_dc', oai_dc_reader)
+    client._metadata_registry.registerReader('base_dc', base_dc_reader)
     listRecords = client.listRecords(metadataPrefix=format.name, resumptionToken=token)
     saveRecordList(source, format, listRecords)
 
@@ -73,11 +74,17 @@ def saveRecordList(source, format, listRecords):
     def commit_records(buf):
         # First separate existing and new records
         identifiers = [r.identifier for r in buf]
-        records_to_update = OaiRecord.objects.filter(identifier__in=identifiers)
-        identifiers_found = set([r.identifier for r in records_to_update])
+        records_found = OaiRecord.objects.filter(identifier__in=identifiers).values_list('identifier','id')
+        identifiers_found = {identifier:id for identifier,id in records_found}
         records_to_create = []
+        records_to_update = []
         for r in buf:
-            if r.identifier not in identifiers_found:
+            id = identifiers_found.get(r.identifier)
+            if id:
+                r.id = id
+                r.last_modified = datetime.now()
+                records_to_update.append(r)
+            else:
                 records_to_create.append(r)
 
         # Create new records
@@ -119,7 +126,7 @@ def fetch_from_source(pk):#self, pk):
     baseStatus = 'records'
 
     # Set up the OAI fetcher
-    format, created = OaiFormat.objects.get_or_create(name=METADATA_FORMAT) # defined in oai.settings
+    format, created = OaiFormat.objects.get_or_create(name=source.format)
     client = source.getClient()
     client._metadata_registry.registerReader('oai_dc', oai_dc_reader)
     client._metadata_registry.registerReader('base_dc', base_dc_reader)
@@ -285,6 +292,31 @@ def rerun_extractor(modelrecord, extractor, deletePrevious=True):
         name = extractor.subset()+':'+set
         modelset, created = OaiSet.objects.get_or_create(name=name)
         modelrecord.sets.add(modelset)
+
+def rerun_doi_extraction(schema='oai_dc'):
+    lastpk = 0
+    bs = 1000
+    updated = 0
+    found = True
+    while found:
+        found = False
+        print lastpk
+        print updated
+        for r in OaiRecord.objects.filter(pk__gt=lastpk).order_by('pk')[:bs]:
+            found = True
+            lastpk = r.pk
+                    
+            if not r.doi: 
+                try:
+                    fullXML = etree.fromstring(r.metadata)
+                    doi = extract_doi(fullXML, schema)
+                    if doi:
+                        updated += 1
+                        r.doi = doi
+                        r.save(update_fields=['doi'])
+                except XMLSyntaxError as e:
+                    return 'XML syntax error: '+unicode(e)
+
 
 @shared_task
 def cleanup_resumption_tokens():

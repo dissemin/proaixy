@@ -32,10 +32,17 @@ base_dc_namespaces = {
 
 def extract_doi(element, schema='oai_dc'):
     if schema == 'oai_dc':
-        identifier_field = 'oai_dc:dc/dc:identifier/text()'
+        identifier_field = '|'.join([
+            'oai_dc:dc/dc:identifier/text()',
+            'oai_dc:dc/dc:relation/text()',
+            ])
         namespaces = oai_dc_namespaces
     elif schema == 'base_dc':
-        identifier_field = 'base_dc:dc/dc:identifier/text()'
+        identifier_field = '|'.join([
+            'base_dc:dc/dc:identifier/text()',
+            'base_dc:dc/dc:relation/text()',
+            'base_dc:dc/base_dc:link/text()',
+            ])
         namespaces = base_dc_namespaces
     else:
         raise ValueError("Invalid schema")

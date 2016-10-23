@@ -26,6 +26,8 @@ class OaiSource(models.Model):
     name = models.CharField(max_length=100, unique=True)
     # The prefix used for the virtual sets
     prefix = models.CharField(max_length=100, unique=True)
+    # The format in which the source should be harvested
+    format = models.CharField(max_length=100, default='oai_dc')
     # The optional set restrincting the records to harvest
     restrict_set = models.CharField(max_length=512, null=True, blank=True)
     # Records with a modification date earlier than that are already fetched

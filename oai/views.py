@@ -278,7 +278,7 @@ def get_pdf_url(record):
     matches += xpath_ev.evaluate(link_field)
     for m in matches:
         print m
-        if oa or m.endswith('.pdf'):
+        if oa or m.endswith('.pdf') or 'academia.edu' in m:
             return m
 
 def redirect_no_referrer(url):
