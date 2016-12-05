@@ -11,3 +11,5 @@ name_tools
 -e git://github.com/wetneb/pyoai.git@base_dc#egg=pyoai
 redis
 django-bulk-update
+django-redis-cache
+django-cache-machine

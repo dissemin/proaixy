@@ -3,7 +3,15 @@
 {% block mainContent %}
 {% if matches %}
 <ListRecords>{% for record in matches %}
-{% include "oai/record.xml" with record=record %}
+<record>
+    <header>
+        <identifier>{{ record.identifier }}</identifier>{% if format == "any" %} 
+        <format>{{ record.format_name }}</format>{% endif %}
+        <datestamp>{{ record.last_modified | isoformat }}</datestamp>
+        <setSpec>proaixy:source:{{ record.source_prefix }}</setSpec>
+    </header>
+    {% autoescape off %}{{ record.render_metadata }}{% endautoescape %}
+</record>
 {% endfor %}{% if token %}
 <resumptionToken cursor="{{ token.cursor }}" completeListSize="{{ token.total_count }}">{{ token.key }}</resumptionToken>
 {% endif %}

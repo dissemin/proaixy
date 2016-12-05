@@ -32,7 +32,7 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,16 +41,17 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'oai',
     'djcelery',
-)
+    'templatetag_handlebars',
+]
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE_CLASSES = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-)
+]
 
 ROOT_URLCONF = 'proaixy.urls'
 
@@ -88,6 +89,37 @@ DATABASES = {
     }
 }
 
+<<<<<<< HEAD
+=======
+TEMPLATES = [{
+    'BACKEND':'django.template.backends.django.DjangoTemplates',
+    'OPTIONS': {
+        'loaders': [
+            'django.template.loaders.eggs.Loader',
+            'django.template.loaders.app_directories.Loader',
+        ],
+        'context_processors': [
+            'django.contrib.auth.context_processors.auth',
+        ],
+        }
+    }]
+
+CACHES = {
+        'default': {
+            # This one uses Redis, which is already required for message-passing
+            # to Celery, so let's use it as a cache too
+             'BACKEND': 'redis_cache.RedisCache',
+             'LOCATION': ('localhost:6379'),
+             'OPTIONS': {
+                 'DB': 0,
+             },
+            }
+}
+
+CACHE_MACHINE_USE_REDIS = True
+REDIS_BACKEND = 'redis://localhost:6379'
+
+>>>>>>> eba7d88... Optimize OAI endpoint
 # Login and athentication
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'

@@ -9,6 +9,7 @@ from django.utils.functional import cached_property
 from django.utils.html import escape
 from django.core.exceptions import ObjectDoesNotExist
 from djcelery.models import TaskMeta, PeriodicTask, TaskState
+from caching.base import CachingManager, CachingMixin
 
 import hashlib
 
@@ -19,7 +20,7 @@ from oai.utils import nstr, ndt
 from oai.settings import OWN_SET_PREFIX, RESUMPTION_TOKEN_SALT
 
 # An OAI data provider
-class OaiSource(models.Model):
+class OaiSource(CachingMixin, models.Model):
     # The URL of the OAI endpoint
     url = models.URLField(max_length=256, unique=True) 
     # The name of the repository as exposed by Identify
@@ -45,6 +46,9 @@ class OaiSource(models.Model):
     nb_records = models.IntegerField(default=0)
     # Last change made to this model
     last_change = models.DateTimeField(auto_now=True) 
+
+    objects = CachingManager()
+
     def __unicode__(self):
         return self.name
     def getClient(self):
@@ -124,10 +128,12 @@ class OaiSet(models.Model):
         except ObjectDoesNotExist:
             return None
 
-class OaiFormat(models.Model):
+class OaiFormat(CachingMixin, models.Model):
     name = models.CharField(max_length=128)
     schema = models.CharField(max_length=512, null=True, blank=True)
     namespace = models.CharField(max_length=512, null=True, blank=True)
+
+    objects = CachingManager()
     def __unicode__(self):
         return self.name
 
@@ -139,11 +145,23 @@ oaiformats_cache = None
 def getOaiFormatName(pk):
     global oaiformats_cache
     if oaiformats_cache is None:
-        oaiformats_cache = {k:v for (k,v) in OaiFormat.objects.all().values('pk','name')}
+        oaiformats_cache = {k:v for (k,v) in OaiFormat.objects.all().values_list('pk','name')}
     try:
         return oaiformats_cache[pk]
     except KeyError:
+        oaiformats_cache = {k:v for (k,v) in OaiFormat.objects.all().values_list('pk','name')}
         return OaiFormat.objects.get(pk=pk).name
+
+oaiprefix_cache = None
+def getOaiSourcePrefix(pk):
+    global oaiprefix_cache
+    if oaiprefix_cache is None:
+        oaiprefix_cache = {k:v for (k,v) in OaiSource.objects.all().values_list('pk','prefix')}
+    try:
+        return oaiprefix_cache[pk]
+    except KeyError:
+        oaiprefix_cache = {k:v for (k,v) in OaiSource.objects.all().values_list('pk','prefix')}
+        return OaiSource.objects.get(pk=pk).prefix
 
 
 from oai.virtual import REGISTERED_EXTRACTORS
@@ -217,6 +235,13 @@ class OaiRecord(models.Model):
         the OaiFormat
         """
         return getOaiFormatName(self.format_id)
+
+    @property
+    def source_prefix(self):
+        """
+        Same as above for self.source.prefix
+        """
+        return getOaiSourcePrefix(self.source_id)
 
 # A resumption token for the output interface
 class ResumptionToken(models.Model):
