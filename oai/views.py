@@ -259,7 +259,11 @@ base_dc_namespaces = {'base_dc': 'http://oai.base-search.net/base_dc/',
  'dc': 'http://purl.org/dc/elements/1.1/'}
 
 def get_pdf_url(record):
-    xml = etree.fromstring(record.metadata)
+    try:
+        xml = etree.fromstring(record.metadata)
+    except etree.XMLSyntaxError as e:
+        return
+
     oa = False
     identifier_field = 'oai_dc:dc/dc:identifier/text()'
     link_field = 'oai_dc:dc/dc:link/text()'
