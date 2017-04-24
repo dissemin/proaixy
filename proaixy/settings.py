@@ -151,12 +151,12 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 # This has to be added to the model instead.
 
-#CELERYBEAT_SCHEDULE = {
-#    'cleanup_resumption_tokens': {
-#                'task': 'oai.tasks.cleanup_resumption_tokens',
-#                'schedule': oai.settings.RESUMPTION_TOKEN_VALIDITY,
-#                'args': ()},
-#    }
+CELERYBEAT_SCHEDULE = {
+    'cleanup_resumption_tokens': {
+                'task': 'oai.tasks.cleanup_resumption_tokens',
+                'schedule': timedelta(days=1),
+                'args': ()},
+    }
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
 CELERY_TIMEZONE = 'UTC'

@@ -13,3 +13,4 @@ redis
 django-bulk-update
 django-redis-cache
 django-cache-machine
+python-dateutil

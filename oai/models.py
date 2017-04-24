@@ -15,6 +15,7 @@ import hashlib
 
 from oaipmh.client import Client
 from oaipmh.metadata import MetadataRegistry
+from crossref import FakeOaiClientForCrossref
 
 from oai.utils import nstr, ndt
 from oai.settings import OWN_SET_PREFIX, RESUMPTION_TOKEN_SALT
@@ -52,6 +53,8 @@ class OaiSource(CachingMixin, models.Model):
     def __unicode__(self):
         return self.name
     def getClient(self):
+        if self.format == 'citeproc':
+            return FakeOaiClientForCrossref()
         registry = MetadataRegistry()
         client = Client(self.url, registry)
         client.get_method = self.get_method

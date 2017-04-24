@@ -7,7 +7,9 @@ from celery import current_task, task
 
 from lxml import etree
 from urllib2 import URLError, HTTPError
+import json
 
+import dateutil.parser
 from django.utils.timezone import now, make_aware, make_naive, UTC
 from django.db import IntegrityError, transaction
 from datetime import timedelta, datetime
@@ -23,17 +25,6 @@ from oai.settings import *
 from oai.virtual import *
 
 logger = get_task_logger(__name__)
-
-def fill_extra_ids(record):
-    element = etree.fromstring(record.metadata)
-
-    doi = extract_doi(element)
-    fingerprint = compute_fingerprint(element)
-
-    if doi or fingerprint:
-        record.doi = doi
-        record.fingerprint = fingerprint
-        record.save(update_fields=['doi','fingerprint'])
 
 def addSourceFromURL(url, prefix, get_method=False):
     try:
@@ -82,7 +73,7 @@ def saveRecordList(source, format, listRecords):
             id = identifiers_found.get(r.identifier)
             if id:
                 r.id = id
-                r.last_modified = datetime.now()
+                r.last_modified = make_aware(datetime.now(), UTC())
                 records_to_update.append(r)
             else:
                 records_to_create.append(r)
@@ -207,14 +198,25 @@ def fetch_formats_from_source(self, pk):
         f.save()
 
 def create_record_instance(source, record, format):
-    fullXML = record[1].element()
-    metadataStr = etree.tostring(fullXML, pretty_print=True)
-    identifier = record[0].identifier()[:256]
-    timestamp = record[0].datestamp()
-    timestamp = make_aware(timestamp, UTC())
+    if format.name == 'citeproc':
+        # This is a JSON object
+        metadataStr = json.dumps(record)
+        doi = record['DOI']
+        identifier = 'oai:crossref.org:'+doi
+        timestamp = record.get('indexed', {}).get(
+                                'date-time', '')
+        timestamp = dateutil.parser.parse(timestamp)
+        fingerprint = None # support dropped
+    else:
+        # This a normal OAI record
+        fullXML = record[1].element()
+        metadataStr = etree.tostring(fullXML, pretty_print=True)
+        identifier = record[0].identifier()[:256]
+        timestamp = record[0].datestamp()
+        timestamp = make_aware(timestamp, UTC())
 
-    fingerprint = compute_fingerprint(fullXML, format.name)
-    doi = extract_doi(fullXML, format.name)
+        fingerprint = compute_fingerprint(fullXML, format.name)
+        doi = extract_doi(fullXML, format.name)
 
     return OaiRecord(
         identifier=identifier,
@@ -322,6 +324,5 @@ def rerun_doi_extraction(schema='oai_dc'):
 def cleanup_resumption_tokens():
     threshold = now() - RESUMPTION_TOKEN_VALIDITY
     ResumptionToken.objects.filter(date_created__lt=threshold).delete()
-
 
 

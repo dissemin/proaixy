@@ -13,9 +13,9 @@ QUERY_TIME_RANGE = timedelta(days=7) # range of initial OAI queries
 REPOSITORY_NAME = 'proaixy'
 ADMIN_EMAIL = 'antonin@delpeuch.eu'
 OAI_ENDPOINT_NAME = 'oai'
-RESULTS_LIMIT = 100
-RESUMPTION_TOKEN_VALIDITY = timedelta(hours=6)
-METADATA_FORMAT = 'oai_dc'
+RESULTS_LIMIT = 1000
+RESUMPTION_TOKEN_VALIDITY = timedelta(days=30)
+METADATA_FORMAT = 'base_dc'
 OWN_SET_PREFIX = 'proaixy'
 RESUMPTION_TOKEN_SALT = 'change_me' # salt used to generate resumption tokens
 
